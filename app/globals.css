@@ -1,0 +1,192 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #f0ede6;
+  --card: #1a1a1a;
+  --card-foreground: #f0ede6;
+  --popover: #1a1a1a;
+  --popover-foreground: #f0ede6;
+  --primary: #f5c400;
+  --primary-foreground: #080808;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #f0ede6;
+  --muted: #222222;
+  --muted-foreground: #888888;
+  --accent: #f5c400;
+  --accent-foreground: #080808;
+  --accent-green: #1a6b3a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #2a2a2a;
+  --input: #2a2a2a;
+  --ring: #f5c400;
+  --radius: 2px;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #f0ede6;
+  --card: #1a1a1a;
+  --card-foreground: #f0ede6;
+  --popover: #1a1a1a;
+  --popover-foreground: #f0ede6;
+  --primary: #f5c400;
+  --primary-foreground: #080808;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #f0ede6;
+  --muted: #222222;
+  --muted-foreground: #888888;
+  --accent: #f5c400;
+  --accent-foreground: #080808;
+  --accent-green: #1a6b3a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #2a2a2a;
+  --input: #2a2a2a;
+  --ring: #f5c400;
+}
+
+@theme inline {
+  --font-sans: var(--font-body), system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius));
+  --radius-md: calc(var(--radius));
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 2px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background-image:
+      linear-gradient(to bottom right, rgba(26, 107, 58, 0.08), transparent 55%),
+      linear-gradient(to top left, rgba(245, 196, 0, 0.06), transparent 45%);
+    background-attachment: fixed;
+  }
+
+  .font-heading {
+    font-family: var(--font-heading), system-ui, sans-serif;
+  }
+
+  .font-label {
+    font-family: var(--font-label), ui-monospace, SFMono-Regular, Menlo, Monaco,
+      Consolas, 'Liberation Mono', 'Courier New', monospace;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .site-shell {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-6 lg:px-8;
+  }
+
+  .site-section {
+    @apply relative border-t border-border/80 bg-transparent py-14 sm:py-16 lg:py-20;
+  }
+
+  .site-section-rule {
+    @apply pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-border to-transparent;
+  }
+
+  .site-kicker {
+    font-family: var(--font-label), ui-monospace, SFMono-Regular, Menlo, Monaco,
+      Consolas, 'Liberation Mono', 'Courier New', monospace;
+    @apply text-[10px] uppercase tracking-[0.24em] text-[#7c776d];
+  }
+
+  .site-kicker-accent {
+    @apply text-[var(--accent-green)];
+  }
+
+  .site-heading {
+    font-family: var(--font-heading), system-ui, sans-serif;
+    @apply text-[30px] uppercase tracking-[0.1em] text-foreground md:text-[38px];
+  }
+
+  .site-copy {
+    @apply text-sm leading-7 text-[#aca79d] md:text-base;
+  }
+
+  .site-brand {
+    font-family: var(--font-heading), system-ui, sans-serif;
+    @apply text-lg uppercase tracking-[0.14em] text-foreground;
+  }
+
+  .site-brand-accent {
+    @apply text-[var(--primary)];
+  }
+
+  .site-surface {
+    @apply rounded-sm border border-border/90 bg-card;
+  }
+
+  .site-panel {
+    @apply rounded-sm border border-border/90 bg-[#111111];
+  }
+
+  .site-panel-soft {
+    @apply rounded-sm border border-border/90 bg-[#141414];
+  }
+
+  .site-shadow-panel {
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.42);
+  }
+
+  .site-shadow-lift {
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+  }
+
+  .site-pill {
+    @apply inline-flex items-center justify-center rounded-sm border border-black/10 bg-[var(--primary)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-black;
+  }
+
+  .site-cta-primary {
+    font-family: var(--font-label), ui-monospace, SFMono-Regular, Menlo, Monaco,
+      Consolas, 'Liberation Mono', 'Courier New', monospace;
+    @apply inline-flex min-h-10 items-center justify-center gap-2.5 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-black transition-[background-color,border-color,color,box-shadow] hover:bg-[#f0bf00] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .site-cta-secondary {
+    font-family: var(--font-label), ui-monospace, SFMono-Regular, Menlo, Monaco,
+      Consolas, 'Liberation Mono', 'Courier New', monospace;
+    @apply inline-flex min-h-10 items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[#a6a199] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .site-link-muted {
+    @apply text-sm text-[#b6b0a5] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .site-meta {
+    font-family: var(--font-label), ui-monospace, SFMono-Regular, Menlo, Monaco,
+      Consolas, 'Liberation Mono', 'Courier New', monospace;
+    @apply text-[10px] uppercase tracking-[0.2em] text-[#7f7a71];
+  }
+}
