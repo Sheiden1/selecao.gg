@@ -1,84 +1,72 @@
 # ⚽ Selecao.gg
 
-<p align="center">
-  <a href="https://selecao-gg.vercel.app/">
-    <img src="https://img.shields.io/badge/Live%20Demo-Online-00C853?style=for-the-badge&logo=vercel&logoColor=white" />
-  </a>
-  <img src="https://img.shields.io/badge/Next.js-Framework-black?style=for-the-badge&logo=nextdotjs" />
-  <img src="https://img.shields.io/badge/React-Library-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
-  <img src="https://img.shields.io/badge/TailwindCSS-Styling-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white" />
-  <img src="https://img.shields.io/badge/Status-Production-success?style=for-the-badge" />
-</p>
+Landing page minimalista para uma loja de camisas de futebol, focada em conversão via WhatsApp e construção de confiança para vendas no Instagram.
 
-<p align="center">
-  Landing page minimalista para venda de camisas de futebol com foco em conversão via WhatsApp.
-</p>
-
----
-
-## 🔗 Acesse o Projeto
-
-👉 https://selecao-gg.vercel.app/
-
----
-
-## 📷 Preview
-
-<p align="center">
-  <img src="./public/preview.png" alt="Preview do site" width="100%" />
-</p>
-
-> 💡 Dica: salva um print do site como `preview.png` dentro da pasta `/public`
+🔗 **Acesse o projeto:**  
+https://selecao-gg.vercel.app/
 
 ---
 
 ## 📌 Sobre o Projeto
 
-O **Selecao.gg** foi desenvolvido como uma **landing page estratégica** para apoiar vendas via Instagram e WhatsApp.
+O **Selecao.gg** é uma landing page moderna e enxuta criada para complementar uma operação de vendas de camisas de time via redes sociais.
 
-Diferente de um e-commerce tradicional, o foco aqui é:
+O objetivo principal não é vender diretamente no site, mas:
 
-- Converter tráfego social em conversa direta
-- Criar percepção de marca profissional
-- Apresentar produtos de forma simples e atrativa
-
----
-
-## 🎯 Objetivos
-
-- Aumentar confiança do cliente
-- Melhorar taxa de conversão
-- Servir como vitrine digital da marca
-- Reduzir fricção no processo de compra
+- Gerar **confiança e autoridade**
+- Servir como vitrine visual dos produtos
+- Direcionar o usuário para **fechamento via WhatsApp**
 
 ---
 
 ## 🚀 Tecnologias Utilizadas
 
-- **Next.js**
-- **React**
-- **Tailwind CSS**
-- **Vercel (Deploy)**
+- Next.js
+- React
+- Tailwind CSS
+- Vercel (Deploy)
 
 ---
 
-## ⚙️ Funcionalidades
+## 🎯 Funcionalidades
 
-- Layout moderno e responsivo
-- Hero section otimizada para impacto visual
-- Cards de produtos
-- CTA direto para WhatsApp
-- Estrutura leve e rápida
-- Mobile-first design
+- Layout minimalista e responsivo  
+- Seção Hero moderna  
+- Exibição de produtos (camisas)  
+- Botões de ação para WhatsApp  
+- Design focado em conversão  
+- Otimizado para mobile  
 
 ---
 
-## 🧠 Estratégia
+## 📷 Preview
 
-Este projeto segue conceitos de:
+> Adicione prints do projeto aqui
 
-- **Social Selling**
-- **Landing Pages de Alta Conversão**
-- **UX simplificado**
-- **Minimalismo visual**
+---
 
+## 🧠 Estratégia do Projeto
+
+Este projeto foi desenvolvido com foco em:
+
+- Social selling (vendas via Instagram/WhatsApp)  
+- Redução de fricção na jornada do usuário  
+- Comunicação direta e objetiva  
+- Design limpo e profissional  
+
+---
+
+## ⚙️ Como rodar o projeto localmente
+
+```bash
+# Clone o repositório
+git clone https://github.com/SEU-USUARIO/selecao.gg
+
+# Entre na pasta
+cd selecao.gg
+
+# Instale as dependências
+npm install
+
+# Rode o projeto
+npm run dev
