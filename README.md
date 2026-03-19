@@ -54,5 +54,3 @@ Este projeto foi desenvolvido com foco em:
 - Redução de fricção na jornada do usuário  
 - Comunicação direta e objetiva  
 - Design limpo e profissional  
-# Rode o projeto
-npm run dev
