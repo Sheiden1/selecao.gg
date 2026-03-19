@@ -24,6 +24,7 @@ O objetivo principal não é vender diretamente no site, mas:
 - Next.js
 - React
 - Tailwind CSS
+- shadcn/ui
 - Vercel (Deploy)
 
 ---
@@ -41,7 +42,7 @@ O objetivo principal não é vender diretamente no site, mas:
 
 ## 📷 Preview
 
-> Adicione prints do projeto aqui
+<img width="1359" height="634" alt="1" src="https://github.com/user-attachments/assets/444c392c-ae8d-4549-aac5-cee77a6c8297" />
 
 ---
 
@@ -53,20 +54,5 @@ Este projeto foi desenvolvido com foco em:
 - Redução de fricção na jornada do usuário  
 - Comunicação direta e objetiva  
 - Design limpo e profissional  
-
----
-
-## ⚙️ Como rodar o projeto localmente
-
-```bash
-# Clone o repositório
-git clone https://github.com/SEU-USUARIO/selecao.gg
-
-# Entre na pasta
-cd selecao.gg
-
-# Instale as dependências
-npm install
-
 # Rode o projeto
 npm run dev
