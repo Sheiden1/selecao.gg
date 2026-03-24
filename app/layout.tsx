@@ -23,7 +23,7 @@ const labelFont = Space_Mono({
 
 export const metadata: Metadata = {
   title: 'SELECAO.gg | Camisas de futebol para quem veste o jogo',
-  description: 'Loja de camisas de futebol selecionadas, de clubes e selecoes, com atendimento direto pelo WhatsApp. Para quem veste o jogo.',
+  description: 'Loja de camisas de futebol selecionadas, de selecoes, com atendimento direto pelo WhatsApp. Para quem veste o jogo.',
 }
 
 export const viewport: Viewport = {

@@ -41,7 +41,7 @@ export function Footer() {
 
       <div className="site-shell mt-8 flex flex-col items-start justify-between gap-3 border-t border-[#171717] pt-5 sm:flex-row sm:items-center">
         <p className="text-[11px] text-[#5c574f]">
-          2026 selecao.gg - Loja especializada em camisas de futebol.
+          2026 selecao.gg 
         </p>
         <p className="site-kicker">
           Para quem veste o jogo

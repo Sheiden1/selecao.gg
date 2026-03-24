@@ -81,6 +81,7 @@ export function FeaturedJerseys() {
       <div className="site-section-rule" />
       <div className="site-shell relative">
         <SectionHeading
+          kicker=""
           title="Camisas em destaque"
           accent
         />
