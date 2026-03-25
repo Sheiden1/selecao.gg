@@ -2,7 +2,7 @@ import Image from "next/image"
 import { ArrowUpRight } from "lucide-react"
 import { SectionHeading } from "@/components/section-heading"
 import { SiteCta } from "@/components/site-cta"
-import { featuredJerseys, instagramHref } from "@/content/home"
+import { featuredJerseys, whatsappHref } from "@/content/home"
 
 type FeaturedProduct = (typeof featuredJerseys)[number]
 
@@ -50,12 +50,12 @@ function JerseyCard({ product }: { product: FeaturedProduct }) {
           </div>
 
           <SiteCta
-            href={instagramHref}
+            href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full justify-center rounded-[10px] shadow-none"
           >
-            Consultar peça
+            Comprar
             <ArrowUpRight className="h-3.5 w-3.5" />
           </SiteCta>
         </div>

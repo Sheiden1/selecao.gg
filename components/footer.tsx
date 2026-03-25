@@ -1,7 +1,7 @@
 import { ArrowUpRight, Instagram } from "lucide-react"
 import { BrandMark } from "@/components/brand-mark"
 import { SiteCta } from "@/components/site-cta"
-import { instagramHref, navLinks } from "@/content/home"
+import { instagramHref, navLinks, whatsappHref } from "@/content/home"
 
 export function Footer() {
   return (
@@ -24,7 +24,7 @@ export function Footer() {
                   </a>
                 ))}
                 <a
-                  href={instagramHref}
+                  href={whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="site-link-muted inline-flex items-center gap-2 text-[13px]"

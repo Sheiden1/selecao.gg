@@ -1,4 +1,6 @@
 export const instagramHref = "https://instagram.com/selecao.gg"
+export const whatsappHref =
+  "https://wa.me/5583991345424?text=Ol%C3%A1!%20Vi%20as%20camisas%20no%20site%20e%20tenho%20interesse."
 
 export const navLinks = [
   { label: "Como funciona", href: "#como-funciona" },
@@ -28,6 +30,8 @@ export const featuredJerseys = [
   {
     name: "Brasil 2026/27",
     label: "Destaque",
+    category: "Seleção",
+    edition: "Jogador e torcedor",
     description: "Versão Jogador e Torcedor | Nome e número personalizáveis",
     price: "R$ ???",
     image: "/images/Jersey2026-player.png",
@@ -35,13 +39,17 @@ export const featuredJerseys = [
   {
     name: "Brasil II 2026/27",
     label: "Seleção atual",
-    description: "Versão Jogador e Torcedor | Nome e número personalizáveis ",
+    category: "Seleção",
+    edition: "Jogador e torcedor",
+    description: "Versão Jogador e Torcedor | Nome e número personalizáveis",
     price: "R$ ???",
     image: "/images/banner1.png",
   },
   {
     name: "Brasil 2002 Pentacampeonato",
     label: "Retrô",
+    category: "Retrô",
+    edition: "Modelo histórico",
     description: "Peça escolhida pelo valor histórico e pela força visual.",
     price: "R$ ???",
     image: "/images/banner3.png",
@@ -63,6 +71,6 @@ export const faqItems = [
   },
   {
     question: "Por onde acontece o atendimento?",
-    answer: "Nesta fase, o primeiro contato acontece pelo Instagram.",
+    answer: "Nesta fase, o atendimento acontece pelo WhatsApp.",
   },
 ]

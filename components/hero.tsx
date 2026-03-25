@@ -1,7 +1,7 @@
 import Image from "next/image"
 import { ArrowRight, ArrowUpRight } from "lucide-react"
 import { SiteCta } from "@/components/site-cta"
-import { instagramHref } from "@/content/home"
+import { whatsappHref } from "@/content/home"
 
 export function Hero() {
   return (
@@ -26,8 +26,7 @@ export function Hero() {
               </h1>
 
               <p className="max-w-[28rem] text-[14px] leading-7 text-[#b8b1a6] sm:text-[15px] sm:leading-7">
-                Modelos de clubes e seleções com apresentação clara e atendimento
-                direto.
+              Clareza na escolha. Agilidade no atendimento.
               </p>
             </div>
 
@@ -38,7 +37,7 @@ export function Hero() {
               </SiteCta>
 
               <SiteCta
-                href={instagramHref}
+                href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 variant="secondary"
@@ -56,7 +55,7 @@ export function Hero() {
             <div className="site-surface site-shadow-panel overflow-hidden">
               <div className="relative aspect-[4/5] min-h-[18rem] overflow-hidden sm:aspect-[16/10] lg:aspect-[5/4]">
                 <Image
-                  src="/images/jogadores.png"
+                  src="/images/bannercentral.png"
                   alt="Imagem principal com jogadores usando camisas de futebol"
                   fill
                   priority

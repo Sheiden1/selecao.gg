@@ -12,7 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { instagramHref, navLinks } from "@/content/home"
+import { instagramHref, navLinks, whatsappHref } from "@/content/home"
 
 export function Navigation() {
   return (
@@ -82,7 +82,7 @@ export function Navigation() {
 
               <div className="mt-auto border-t border-white/10 px-5 py-5">
                 <SiteCta
-                  href={instagramHref}
+                  href={whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full justify-center"
@@ -91,7 +91,7 @@ export function Navigation() {
                   <ArrowUpRight className="h-3.5 w-3.5" />
                 </SiteCta>
                 <p className="mt-3 text-sm leading-6 text-[#8f897f]">
-                  Atendimento pelo Instagram nesta fase.
+                  Atendimento direto pelo WhatsApp.
                 </p>
               </div>
             </SheetContent>
