@@ -202,7 +202,7 @@ function normalizeOrder(order) {
     orderStatus: orderStatusLabelMap[order.status] ?? 'Aguardando',
     date: createdAt.slice(0, 10),
     createdAt,
-    notes: '',
+    notes: order.observacoes ?? '',
     history: [{ ts: createdAt, desc: 'Pedido criado' }],
   }
 }
@@ -213,6 +213,7 @@ function buildPedidoPayload(order) {
     camisa: order.shirtName.trim().toUpperCase(),
     numero: order.shirtNumber.trim(),
     tamanho: order.size,
+    observacoes: order.notes.trim() || null,
     pagamento: paymentValueMap[order.payStatus] ?? 'pendente',
     status: orderStatusValueMap[order.orderStatus] ?? 'aguardando',
     criado_em: order.date ? `${order.date}T00:00:00` : undefined,
@@ -550,6 +551,7 @@ export default function SelecaoGG() {
       await requestJson(`/api/pedidos/${selectedOrder.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
+          observacoes: detailDraft.notes.trim() || null,
           pagamento: paymentValueMap[detailDraft.payStatus],
           status: orderStatusValueMap[detailDraft.orderStatus],
         }),
@@ -1094,7 +1096,7 @@ export default function SelecaoGG() {
                   <TerminalSelect value={newOrder.size} onValueChange={(value) => setNewOrder((c) => ({ ...c, size: value }))} options={sizes} />
                   <TerminalSelect value={newOrder.payStatus} onValueChange={(value) => setNewOrder((c) => ({ ...c, payStatus: value }))} options={payStatuses} />
                   <TerminalSelect value={newOrder.orderStatus} onValueChange={(value) => setNewOrder((c) => ({ ...c, orderStatus: value }))} options={orderStatuses} />
-                  <textarea disabled className={`${TEXT_INPUT} h-auto py-2 disabled:cursor-not-allowed disabled:opacity-60`} rows={5} placeholder="Observações não sincronizadas com o banco" value={newOrder.notes} onChange={(e) => setNewOrder((c) => ({ ...c, notes: e.target.value }))} />
+                  <textarea className={`${TEXT_INPUT} h-auto py-2`} rows={5} placeholder="Observacoes do pedido" value={newOrder.notes} onChange={(e) => setNewOrder((c) => ({ ...c, notes: e.target.value }))} />
                   <button disabled={isMutating} onClick={createOrder} className="sgg-mono inline-flex h-10 items-center justify-center rounded-md bg-green-600 text-sm uppercase tracking-[0.18em] text-white transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-60">
                     {isMutating ? 'Salvando...' : 'Criar pedido'}
                   </button>
@@ -1371,7 +1373,7 @@ export default function SelecaoGG() {
                         <div className="space-y-3">
                           <TerminalSelect value={detailDraft.payStatus} onValueChange={(value) => setDetailDraft((current) => ({ ...current, payStatus: value }))} options={payStatuses} />
                           <TerminalSelect value={detailDraft.orderStatus} onValueChange={(value) => setDetailDraft((current) => ({ ...current, orderStatus: value }))} options={orderStatuses} />
-                          <textarea disabled value={detailDraft.notes} rows={8} className={`${TEXT_INPUT} h-auto py-2 disabled:cursor-not-allowed disabled:opacity-60`} placeholder="Notas não sincronizadas com o banco" />
+                          <textarea value={detailDraft.notes} onChange={(event) => setDetailDraft((current) => ({ ...current, notes: event.target.value }))} rows={8} className={`${TEXT_INPUT} h-auto py-2`} placeholder="Observacoes do pedido" />
                           <button disabled={isMutating} onClick={saveDetails} className="inline-flex h-10 w-full items-center justify-center rounded-md border border-[#22c55e] text-sm font-medium uppercase tracking-[0.18em] text-[#22c55e] transition hover:bg-[#103114] disabled:cursor-not-allowed disabled:opacity-60">
                             {isMutating ? 'Saving...' : 'Save'}
                           </button>
@@ -1442,3 +1444,4 @@ export default function SelecaoGG() {
     </Tooltip.Provider>
   )
 }
+
