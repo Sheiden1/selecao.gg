@@ -1,34 +1,35 @@
-import type { Metadata, Viewport } from 'next'
-import { Barlow_Condensed, DM_Sans, Space_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import './globals.css'
+import type { Metadata, Viewport } from "next"
+import { Barlow_Condensed, DM_Sans, Space_Mono } from "next/font/google"
+import { Analytics } from "@vercel/analytics/next"
+import "./globals.css"
 
 const headingFont = Barlow_Condensed({
-  subsets: ['latin'],
-  weight: ['600', '700', '800'],
-  variable: '--font-heading',
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  variable: "--font-heading",
 })
 
 const bodyFont = DM_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-body',
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-body",
 })
 
 const labelFont = Space_Mono({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  variable: '--font-label',
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-label",
 })
 
 export const metadata: Metadata = {
-  title: 'SELECAO.gg | Camisas de futebol para quem veste o jogo',
-  description: 'Loja de camisas de futebol selecionadas, de selecoes, com atendimento direto pelo WhatsApp. Para quem veste o jogo.',
+  title: "SELECAO.gg | Camisas de futebol",
+  description:
+    "Camisas de futebol de clubes e selecoes com apresentacao clara e atendimento direto.",
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0A0A0A',
-  width: 'device-width',
+  themeColor: "#080808",
+  width: "device-width",
   initialScale: 1,
 }
 

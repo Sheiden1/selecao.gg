@@ -19,7 +19,10 @@ function AccordionItem({
   return (
     <AccordionPrimitive.Item
       data-slot="accordion-item"
-      className={cn('border-b last:border-b-0', className)}
+      className={cn(
+        'group overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.02] transition-[border-color,background-color,box-shadow] duration-300 data-[state=open]:border-[var(--primary)]/28 data-[state=open]:bg-white/[0.04] data-[state=open]:shadow-[0_16px_34px_rgba(0,0,0,0.22)]',
+        className,
+      )}
       {...props}
     />
   )
@@ -35,13 +38,15 @@ function AccordionTrigger({
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          'focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180',
+          'focus-visible:border-ring focus-visible:ring-ring/40 flex min-h-16 flex-1 items-center justify-between gap-4 px-5 py-4 text-left outline-none transition-[color,background-color] duration-300 hover:bg-white/[0.02] focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 sm:min-h-[72px] sm:px-6 sm:py-5 [&[data-state=open]>span>svg]:rotate-180',
           className,
         )}
         {...props}
       >
         {children}
-        <ChevronDownIcon className="text-muted-foreground pointer-events-none size-4 shrink-0 translate-y-0.5 transition-transform duration-200" />
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/20 text-[#c7c1b7] transition-[border-color,background-color,color] duration-300 group-data-[state=open]:border-[var(--primary)]/28 group-data-[state=open]:bg-[var(--primary)]/10 group-data-[state=open]:text-[var(--primary)]">
+          <ChevronDownIcon className="pointer-events-none size-4 transition-transform duration-300" />
+        </span>
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
   )
@@ -55,10 +60,10 @@ function AccordionContent({
   return (
     <AccordionPrimitive.Content
       data-slot="accordion-content"
-      className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden text-sm"
+      className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden"
       {...props}
     >
-      <div className={cn('pt-0 pb-4', className)}>{children}</div>
+      <div className={cn('px-5 pb-5 pt-0 sm:px-6 sm:pb-6', className)}>{children}</div>
     </AccordionPrimitive.Content>
   )
 }

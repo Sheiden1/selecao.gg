@@ -1,52 +1,52 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #f0ede6;
-  --card: #1a1a1a;
-  --card-foreground: #f0ede6;
-  --popover: #1a1a1a;
-  --popover-foreground: #f0ede6;
+  --background: #080808;
+  --foreground: #f3efe8;
+  --card: #121212;
+  --card-foreground: #f3efe8;
+  --popover: #121212;
+  --popover-foreground: #f3efe8;
   --primary: #f5c400;
   --primary-foreground: #080808;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #f0ede6;
-  --muted: #222222;
-  --muted-foreground: #888888;
+  --secondary: #171717;
+  --secondary-foreground: #f3efe8;
+  --muted: #1f1f1f;
+  --muted-foreground: #8d877d;
   --accent: #f5c400;
   --accent-foreground: #080808;
-  --accent-green: #1a6b3a;
+  --accent-green: #2c7a50;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #2a2a2a;
-  --input: #2a2a2a;
+  --border: #262626;
+  --input: #262626;
   --ring: #f5c400;
   --radius: 2px;
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #f0ede6;
-  --card: #1a1a1a;
-  --card-foreground: #f0ede6;
-  --popover: #1a1a1a;
-  --popover-foreground: #f0ede6;
+  --background: #080808;
+  --foreground: #f3efe8;
+  --card: #121212;
+  --card-foreground: #f3efe8;
+  --popover: #121212;
+  --popover-foreground: #f3efe8;
   --primary: #f5c400;
   --primary-foreground: #080808;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #f0ede6;
-  --muted: #222222;
-  --muted-foreground: #888888;
+  --secondary: #171717;
+  --secondary-foreground: #f3efe8;
+  --muted: #1f1f1f;
+  --muted-foreground: #8d877d;
   --accent: #f5c400;
   --accent-foreground: #080808;
-  --accent-green: #1a6b3a;
+  --accent-green: #2c7a50;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #2a2a2a;
-  --input: #2a2a2a;
+  --border: #262626;
+  --input: #262626;
   --ring: #f5c400;
 }
 
@@ -81,12 +81,25 @@
   * {
     @apply border-border outline-ring/50;
   }
+
+  html {
+    background: var(--background);
+  }
+
   body {
     @apply bg-background text-foreground;
     background-image:
-      linear-gradient(to bottom right, rgba(26, 107, 58, 0.08), transparent 55%),
-      linear-gradient(to top left, rgba(245, 196, 0, 0.06), transparent 45%);
+      radial-gradient(circle at top left, rgba(44, 122, 80, 0.12), transparent 30%),
+      radial-gradient(circle at top right, rgba(245, 196, 0, 0.08), transparent 26%),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.015), transparent 18%),
+      linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
     background-attachment: fixed;
+    background-size: auto, auto, auto, 160px 160px, 160px 160px;
+  }
+
+  a {
+    @apply transition-colors;
   }
 
   .font-heading {
@@ -95,7 +108,7 @@
 
   .font-label {
     font-family: var(--font-label), ui-monospace, SFMono-Regular, Menlo, Monaco,
-      Consolas, 'Liberation Mono', 'Courier New', monospace;
+      Consolas, "Liberation Mono", "Courier New", monospace;
   }
 
   .tabular-nums {
@@ -109,30 +122,30 @@
   }
 
   .site-section {
-    @apply relative border-t border-border/80 bg-transparent py-14 sm:py-16 lg:py-20;
+    @apply relative border-t border-border/70 py-14 sm:py-16 lg:py-20;
   }
 
   .site-section-rule {
-    @apply pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-border to-transparent;
+    @apply pointer-events-none absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-white/12 to-transparent;
   }
 
   .site-kicker {
     font-family: var(--font-label), ui-monospace, SFMono-Regular, Menlo, Monaco,
-      Consolas, 'Liberation Mono', 'Courier New', monospace;
-    @apply text-[10px] uppercase tracking-[0.24em] text-[#7c776d];
+      Consolas, "Liberation Mono", "Courier New", monospace;
+    @apply text-[10px] uppercase tracking-[0.24em] text-[#837d72];
   }
 
   .site-kicker-accent {
-    @apply text-[var(--accent-green)];
+    @apply text-[var(--primary)];
   }
 
   .site-heading {
     font-family: var(--font-heading), system-ui, sans-serif;
-    @apply text-[30px] uppercase tracking-[0.1em] text-foreground md:text-[38px];
+    @apply text-[30px] uppercase leading-[0.94] tracking-[0.08em] text-foreground md:text-[38px];
   }
 
   .site-copy {
-    @apply text-sm leading-7 text-[#aca79d] md:text-base;
+    @apply text-[15px] leading-[1.85] text-[#b0aa9f] md:text-base;
   }
 
   .site-brand {
@@ -145,48 +158,64 @@
   }
 
   .site-surface {
-    @apply rounded-sm border border-border/90 bg-card;
+    @apply rounded-[24px] border border-white/10 bg-[#101010]/92 backdrop-blur-sm;
   }
 
   .site-panel {
-    @apply rounded-sm border border-border/90 bg-[#111111];
+    @apply rounded-[26px] border border-white/10 bg-[#0d0d0d]/90 backdrop-blur-md;
   }
 
   .site-panel-soft {
-    @apply rounded-sm border border-border/90 bg-[#141414];
+    @apply rounded-[22px] border border-white/10 bg-[#131313]/82 backdrop-blur-sm;
   }
 
   .site-shadow-panel {
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.42);
+    box-shadow:
+      0 22px 56px rgba(0, 0, 0, 0.34),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   .site-shadow-lift {
-    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+    box-shadow:
+      0 14px 34px rgba(0, 0, 0, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
   }
 
   .site-pill {
-    @apply inline-flex items-center justify-center rounded-sm border border-black/10 bg-[var(--primary)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-black;
+    font-family: var(--font-label), ui-monospace, SFMono-Regular, Menlo, Monaco,
+      Consolas, "Liberation Mono", "Courier New", monospace;
+    @apply inline-flex items-center justify-center rounded-full border border-[var(--primary)]/30 bg-[var(--primary)]/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#f2d55f];
   }
 
   .site-cta-primary {
     font-family: var(--font-label), ui-monospace, SFMono-Regular, Menlo, Monaco,
-      Consolas, 'Liberation Mono', 'Courier New', monospace;
-    @apply inline-flex min-h-10 items-center justify-center gap-2.5 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-black transition-[background-color,border-color,color,box-shadow] hover:bg-[#f0bf00] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+      Consolas, "Liberation Mono", "Courier New", monospace;
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[var(--primary)] bg-[var(--primary)] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-black shadow-[0_10px_20px_rgba(245,196,0,0.16)] transition-[background-color,border-color,color,transform,box-shadow] hover:-translate-y-0.5 hover:bg-[#f0bf00] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 
   .site-cta-secondary {
     font-family: var(--font-label), ui-monospace, SFMono-Regular, Menlo, Monaco,
-      Consolas, 'Liberation Mono', 'Courier New', monospace;
-    @apply inline-flex min-h-10 items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[#a6a199] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+      Consolas, "Liberation Mono", "Courier New", monospace;
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.03] px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#d9d4ca] transition-[border-color,background-color,color,transform] hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .site-cta-muted {
+    font-family: var(--font-label), ui-monospace, SFMono-Regular, Menlo, Monaco,
+      Consolas, "Liberation Mono", "Courier New", monospace;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/10 bg-transparent px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9a9489] transition-colors hover:border-white/16 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .site-nav-link {
+    @apply text-[13px] font-medium tracking-[0.01em] text-[#b7b0a4] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 
   .site-link-muted {
-    @apply text-sm text-[#b6b0a5] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    @apply text-sm text-[#b8b1a6] transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 
   .site-meta {
     font-family: var(--font-label), ui-monospace, SFMono-Regular, Menlo, Monaco,
-      Consolas, 'Liberation Mono', 'Courier New', monospace;
+      Consolas, "Liberation Mono", "Courier New", monospace;
     @apply text-[10px] uppercase tracking-[0.2em] text-[#7f7a71];
   }
 }

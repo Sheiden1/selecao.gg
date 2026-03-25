@@ -1,51 +1,61 @@
-import { Instagram } from "lucide-react"
+import { ArrowUpRight, Instagram } from "lucide-react"
 import { BrandMark } from "@/components/brand-mark"
 import { SiteCta } from "@/components/site-cta"
+import { instagramHref, navLinks } from "@/content/home"
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/80 bg-[#050505] py-10">
-      <div className="site-shell grid gap-10 md:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)] md:items-start">
-        <div className="space-y-4">
-          <BrandMark />
-          <p className="max-w-md text-sm leading-7 text-[#8b857a]">
-          Feito para quem entende de futebol.
-          </p>
-        </div>
+    <footer id="rodape" className="border-t border-white/10 bg-[#050505] py-10 sm:py-12">
+      <div className="site-shell">
+        <div className="site-panel site-shadow-panel overflow-hidden px-5 py-6 sm:px-7 sm:py-7">
+          <div className="grid gap-8 border-b border-white/10 pb-7 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:items-end">
+            <div className="max-w-xl space-y-4">
+              <BrandMark />
+              <p className="text-sm leading-7 text-[#b2ab9f] sm:text-[15px]">
+                Seleção de camisas de futebol com atendimento direto.
+              </p>
+            </div>
 
-        <div className="space-y-4 md:justify-self-end md:text-right">
-          <p className="site-kicker">
-            Contato
-          </p>
-          <div className="flex flex-col gap-3 text-sm md:items-end">
-            <a
-              href="https://instagram.com/selecao.gg"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="site-link-muted inline-flex items-center gap-2"
-            >
-              <Instagram className="h-4 w-4" />
-              Instagram
-            </a>
-            <SiteCta
-              href="https://wa.me/5583999999999"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-fit px-4"
-            >
-              WhatsApp
-            </SiteCta>
+            <div className="space-y-5 md:justify-self-end md:text-right">
+              <div className="flex flex-wrap gap-x-5 gap-y-2 md:justify-end">
+                {navLinks.map((link) => (
+                  <a key={link.href} href={link.href} className="site-link-muted text-[13px]">
+                    {link.label}
+                  </a>
+                ))}
+                <a
+                  href={instagramHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="site-link-muted inline-flex items-center gap-2 text-[13px]"
+                >
+                  <Instagram className="h-4 w-4" />
+                  Instagram
+                </a>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center md:justify-end">
+                <SiteCta
+                  href={instagramHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="secondary"
+                  className="w-full justify-center sm:w-auto sm:px-4"
+                >
+                  Abrir atendimento
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </SiteCta>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-[#5f5a52]">
+              2026 SELECAO.GG
+            </p>
+            <p className="site-kicker text-[#90897d]">Camisas de futebol</p>
           </div>
         </div>
-      </div>
-
-      <div className="site-shell mt-8 flex flex-col items-start justify-between gap-3 border-t border-[#171717] pt-5 sm:flex-row sm:items-center">
-        <p className="text-[11px] text-[#5c574f]">
-          2026 selecao.gg 
-        </p>
-        <p className="site-kicker">
-          Para quem veste o jogo
-        </p>
       </div>
     </footer>
   )
