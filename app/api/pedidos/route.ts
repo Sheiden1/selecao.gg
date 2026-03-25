@@ -31,17 +31,13 @@ export async function POST(request: Request) {
     const supabase = getSupabase()
     const body = (await request.json()) as Pedido
 
-    const { data, error } = await supabase
-      .from('pedidos')
-      .insert(body)
-      .select()
-      .single()
+    const { error } = await supabase.from('pedidos').insert(body)
 
     if (error) {
       throw error
     }
 
-    return NextResponse.json(data, { status: 201 })
+    return NextResponse.json({ success: true }, { status: 201 })
   } catch (error) {
     return NextResponse.json(
       {

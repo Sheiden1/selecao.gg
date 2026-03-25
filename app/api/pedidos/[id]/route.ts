@@ -17,18 +17,13 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       Object.entries(body).filter(([, value]) => value !== undefined)
     )
 
-    const { data, error } = await supabase
-      .from('pedidos')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
+    const { error } = await supabase.from('pedidos').update(updates).eq('id', id)
 
     if (error) {
       throw error
     }
 
-    return NextResponse.json(data, { status: 200 })
+    return NextResponse.json({ success: true }, { status: 200 })
   } catch (error) {
     return NextResponse.json(
       {
