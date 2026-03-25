@@ -31,11 +31,24 @@ const LOGIN_INPUT =
   'h-11 w-full rounded-md border border-[#1a2e1a] bg-[#0f1a0f] px-3 text-sm text-[#f0fdf4] outline-none placeholder:text-[#374151] focus:border-[#22c55e] focus:ring-2 focus:ring-[#22c55e]/30'
 const ADMIN_USERNAME = 'admin'
 const ADMIN_PASSWORD = 'selecao2026'
-const STORAGE_KEY = 'selecao_gg_orders'
 
 const sizes = ['PP', 'P', 'M', 'G', 'GG', 'XGG']
 const payStatuses = ['Pendente', 'Pago']
 const orderStatuses = ['Aguardando', 'Em produção', 'Pronto', 'Entregue']
+const paymentLabelMap = { pendente: 'Pendente', pago: 'Pago' }
+const paymentValueMap = { Pendente: 'pendente', Pago: 'pago' }
+const orderStatusLabelMap = {
+  aguardando: 'Aguardando',
+  em_producao: 'Em produção',
+  pronto: 'Pronto',
+  entregue: 'Entregue',
+}
+const orderStatusValueMap = {
+  Aguardando: 'aguardando',
+  'Em produção': 'em_producao',
+  Pronto: 'pronto',
+  Entregue: 'entregue',
+}
 
 const fontStyles = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@500;600;700&display=swap');
@@ -52,92 +65,6 @@ const fontStyles = `
   to{opacity:1;transform:translateY(0)}
 }
 `
-
-const SAMPLE_ORDERS = [
-  {
-    id: 1,
-    number: '#0001',
-    client: 'Lucas Almeida',
-    shirtName: 'NEYMAR JR',
-    shirtNumber: '10',
-    size: 'M',
-    payStatus: 'Pago',
-    orderStatus: 'Em produção',
-    date: '2026-03-18',
-    notes: 'Prioridade para presente.',
-    history: [
-      { ts: '2026-03-18T09:15:00', desc: 'Pedido criado' },
-      { ts: '2026-03-18T09:42:00', desc: 'Pagamento confirmado' },
-      { ts: '2026-03-19T11:10:00', desc: 'Status alterado para Em produção' },
-    ],
-  },
-  {
-    id: 2,
-    number: '#0002',
-    client: 'Mariana Santos',
-    shirtName: 'KAKA',
-    shirtNumber: '8',
-    size: 'G',
-    payStatus: 'Pendente',
-    orderStatus: 'Aguardando',
-    date: '2026-03-20',
-    notes: 'Conferir acento no nome.',
-    history: [{ ts: '2026-03-20T10:05:00', desc: 'Pedido criado' }],
-  },
-  {
-    id: 3,
-    number: '#0003',
-    client: 'Bruno Costa',
-    shirtName: 'MESSI',
-    shirtNumber: '10',
-    size: 'P',
-    payStatus: 'Pago',
-    orderStatus: 'Pronto',
-    date: '2026-03-21',
-    notes: 'Separar embalagem premium.',
-    history: [
-      { ts: '2026-03-21T08:32:00', desc: 'Pedido criado' },
-      { ts: '2026-03-21T09:10:00', desc: 'Pagamento confirmado' },
-      { ts: '2026-03-22T13:20:00', desc: 'Status alterado para Em produção' },
-      { ts: '2026-03-23T16:12:00', desc: 'Status alterado para Pronto' },
-    ],
-  },
-  {
-    id: 4,
-    number: '#0004',
-    client: 'Camila Torres',
-    shirtName: 'VINI JR',
-    shirtNumber: '7',
-    size: 'GG',
-    payStatus: 'Pago',
-    orderStatus: 'Entregue',
-    date: '2026-03-16',
-    notes: 'Entrega concluida no balcão.',
-    history: [
-      { ts: '2026-03-16T14:40:00', desc: 'Pedido criado' },
-      { ts: '2026-03-16T15:02:00', desc: 'Pagamento confirmado' },
-      { ts: '2026-03-17T10:00:00', desc: 'Status alterado para Em produção' },
-      { ts: '2026-03-18T12:25:00', desc: 'Status alterado para Pronto' },
-      { ts: '2026-03-19T18:05:00', desc: 'Status alterado para Entregue' },
-    ],
-  },
-  {
-    id: 5,
-    number: '#0005',
-    client: 'Rafael Lima',
-    shirtName: 'RONALDO',
-    shirtNumber: '9',
-    size: 'XGG',
-    payStatus: 'Pendente',
-    orderStatus: 'Em produção',
-    date: '2026-03-22',
-    notes: 'Cliente pediu contato antes do envio.',
-    history: [
-      { ts: '2026-03-22T11:17:00', desc: 'Pedido criado' },
-      { ts: '2026-03-23T09:48:00', desc: 'Status alterado para Em produção' },
-    ],
-  },
-]
 
 function money(value) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
@@ -210,7 +137,7 @@ function statusBadgeClass(type, value) {
       }
     : {
         Aguardando: 'bg-zinc-800/40 text-zinc-400',
-        'Em produÃ§Ã£o': 'bg-amber-950/40 text-amber-400',
+        'Em produção': 'bg-amber-950/40 text-amber-400',
         Pronto: 'bg-sky-950/40 text-sky-400',
         Entregue: 'bg-green-950/40 text-green-400',
       }
@@ -221,7 +148,7 @@ function statusBadgeClass(type, value) {
 function sortValue(order, key) {
   switch (key) {
     case 'number':
-      return Number(order.number.replace('#', ''))
+      return order.number.toLowerCase()
     case 'client':
       return order.client.toLowerCase()
     case 'shirt':
@@ -239,11 +166,8 @@ function sortValue(order, key) {
   }
 }
 
-function createNextDraft(orders) {
-  const next = Math.max(...orders.map((item) => item.id), 0) + 1
+function createNextDraft() {
   return {
-    id: next,
-    number: `#${String(next).padStart(4, '0')}`,
     client: '',
     shirtName: '',
     shirtNumber: '',
@@ -256,31 +180,141 @@ function createNextDraft(orders) {
   }
 }
 
-function loadOrders() {
-  if (typeof window === 'undefined') {
-    return SAMPLE_ORDERS.map((order) => ({ ...order, history: [...order.history] }))
-  }
+function orderNumberLabel(id) {
+  const normalized = String(id ?? '')
+    .replace(/-/g, '')
+    .toUpperCase()
 
-  try {
-    const stored = window.localStorage.getItem(STORAGE_KEY)
-    if (!stored) {
-      return SAMPLE_ORDERS.map((order) => ({ ...order, history: [...order.history] }))
-    }
+  return `#${(normalized.slice(0, 6) || 'NOVO').padEnd(6, '0')}`
+}
 
-    const parsed = JSON.parse(stored)
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      return SAMPLE_ORDERS.map((order) => ({ ...order, history: [...order.history] }))
-    }
+function normalizeOrder(order) {
+  const createdAt = order.criado_em ?? new Date().toISOString()
 
-    return parsed
-  } catch {
-    return SAMPLE_ORDERS.map((order) => ({ ...order, history: [...order.history] }))
+  return {
+    id: String(order.id ?? createdAt),
+    number: orderNumberLabel(order.id ?? createdAt),
+    client: order.cliente ?? '',
+    shirtName: order.camisa ?? '',
+    shirtNumber: order.numero ?? '',
+    size: order.tamanho ?? 'M',
+    payStatus: paymentLabelMap[order.pagamento] ?? 'Pendente',
+    orderStatus: orderStatusLabelMap[order.status] ?? 'Aguardando',
+    date: createdAt.slice(0, 10),
+    createdAt,
+    notes: '',
+    history: [{ ts: createdAt, desc: 'Pedido criado' }],
   }
 }
 
-function saveOrders(orders) {
-  if (typeof window === 'undefined') return
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(orders))
+function buildPedidoPayload(order) {
+  return {
+    cliente: order.client.trim(),
+    camisa: order.shirtName.trim().toUpperCase(),
+    numero: order.shirtNumber.trim(),
+    tamanho: order.size,
+    pagamento: paymentValueMap[order.payStatus] ?? 'pendente',
+    status: orderStatusValueMap[order.orderStatus] ?? 'aguardando',
+    criado_em: order.date ? `${order.date}T00:00:00` : undefined,
+  }
+}
+
+async function parseResponse(response) {
+  const text = await response.text()
+
+  if (!text) {
+    return null
+  }
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
+}
+
+async function requestJson(url, options = {}) {
+  const response = await fetch(url, {
+    cache: 'no-store',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers ?? {}),
+    },
+  })
+  const payload = await parseResponse(response)
+
+  if (!response.ok) {
+    throw new Error(payload?.error ?? 'Erro ao processar a requisição')
+  }
+
+  return payload
+}
+
+const pricingMargins = [
+  { label: '30%', value: 0.3 },
+  { label: '40%', value: 0.4 },
+  { label: '50%', value: 0.5 },
+]
+
+const pricingProducts = [
+  { id: 'torcedor', label: 'Torcedor', supplierUsd: 10 },
+  { id: 'jogador', label: 'Jogador', supplierUsd: 15 },
+  { id: 'retro', label: 'Retrô', supplierUsd: 15 },
+]
+
+const pricingGroups = [
+  {
+    id: 'avulso',
+    badge: 'Avulso',
+    title: 'PEÇA AVULSA — R$ 150 RECEITA FEDERAL POR PEDIDO',
+    shippingUsd: 4,
+    federalTaxBrl: 150,
+    taxLabel: 'R$ 150,00',
+    note: 'Frete avulso: US$ 4.00 por peça',
+  },
+  {
+    id: 'kit',
+    badge: 'Kit',
+    title: 'KIT 4+ PEÇAS — FRETE GRÁTIS, TAXA DILUÍDA',
+    shippingUsd: 0,
+    federalTaxBrl: 37.5,
+    taxLabel: 'R$ 37,50 (+4)',
+    note: 'Frete kit: grátis a partir de 4 peças',
+  },
+]
+
+function usd(value) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value)
+}
+
+function brl(value) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
+}
+
+function parseExchangeRate(value) {
+  const parsed = Number.parseFloat(String(value).replace(',', '.'))
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
+}
+
+function pricingCard(product, group, exchangeRate, margin, personalized) {
+  const supplierUsd = product.supplierUsd + (personalized ? 3 : 0)
+  const supplierBrl = supplierUsd * exchangeRate
+  const shippingBrl = group.shippingUsd * exchangeRate
+  const totalCost = supplierBrl + shippingBrl + group.federalTaxBrl
+  const salePrice = margin >= 1 ? totalCost : totalCost / (1 - margin)
+  const profit = salePrice - totalCost
+
+  return {
+    supplierUsd,
+    supplierBrl,
+    shippingUsd: group.shippingUsd,
+    shippingBrl,
+    federalTaxBrl: group.federalTaxBrl,
+    totalCost,
+    salePrice,
+    profit,
+  }
 }
 
 function saveTimeLabel(value) {
@@ -358,8 +392,8 @@ function RowStatusSelect({ value, onValueChange }) {
 }
 
 export default function SelecaoGG() {
-  const [orders, setOrders] = useState(SAMPLE_ORDERS)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [orders, setOrders] = useState([])
+  const [activeTab, setActiveTab] = useState('pedidos')
   const [loginForm, setLoginForm] = useState({ username: '', password: '' })
   const [loginError, setLoginError] = useState('')
   const [search, setSearch] = useState('')
@@ -368,32 +402,22 @@ export default function SelecaoGG() {
   const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' })
   const [detailId, setDetailId] = useState(null)
   const [detailDraft, setDetailDraft] = useState(null)
-  const [newOrder, setNewOrder] = useState(() => createNextDraft(SAMPLE_ORDERS))
+  const [newOrder, setNewOrder] = useState(() => createNextDraft())
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [clearDataOpen, setClearDataOpen] = useState(false)
   const [savedAt, setSavedAt] = useState(null)
   const [toast, setToast] = useState({ open: false, title: '', message: '', key: 0 })
-  const [isStorageReady, setIsStorageReady] = useState(false)
-  const skipNextSaveRef = useRef(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isMutating, setIsMutating] = useState(false)
+  const [selectedMargin, setSelectedMargin] = useState(0.4)
+  const [personalizationEnabled, setPersonalizationEnabled] = useState(true)
+  const [selectedQuantityMode, setSelectedQuantityMode] = useState('kit')
+  const [exchangeRateInput, setExchangeRateInput] = useState('5.23')
   const firstFieldRef = useRef(null)
 
   useEffect(() => {
-    const storedOrders = loadOrders()
-    setOrders(storedOrders)
-    setNewOrder(createNextDraft(storedOrders))
-    setIsStorageReady(true)
+    fetchOrders()
   }, [])
-
-  useEffect(() => {
-    if (!isStorageReady) return
-    if (skipNextSaveRef.current) {
-      skipNextSaveRef.current = false
-      return
-    }
-
-    saveOrders(orders)
-    setSavedAt(new Date().toISOString())
-  }, [orders, isStorageReady])
 
   useEffect(() => {
     const previousTitle = document.title
@@ -406,7 +430,6 @@ export default function SelecaoGG() {
 
   useEffect(() => {
     function handleKeydown(event) {
-      if (!isAuthenticated) return
       if (!event.ctrlKey || event.key.toLowerCase() !== 'n') return
 
       event.preventDefault()
@@ -415,9 +438,18 @@ export default function SelecaoGG() {
 
     window.addEventListener('keydown', handleKeydown)
     return () => window.removeEventListener('keydown', handleKeydown)
-  }, [isAuthenticated])
+  }, [])
+
+  useEffect(() => {
+    if (!detailId) return
+    if (orders.some((order) => order.id === detailId)) return
+
+    setDetailId(null)
+    setDetailDraft(null)
+  }, [detailId, orders])
 
   const selectedOrder = orders.find((order) => order.id === detailId) ?? null
+  const exchangeRate = parseExchangeRate(exchangeRateInput)
   const query = search.trim().toLowerCase()
   const filtered = orders.filter((order) => {
     const searchMatch =
@@ -443,10 +475,41 @@ export default function SelecaoGG() {
     ready: orders.filter((order) => order.orderStatus === 'Pronto').length,
     revenue: orders.filter((order) => order.payStatus === 'Pago').reduce((sum, order) => sum + orderPrice(order), 0),
   }
+  const orderedPricingGroups = selectedQuantityMode === 'kit'
+    ? [pricingGroups[1], pricingGroups[0]]
+    : [pricingGroups[0], pricingGroups[1]]
 
   function notify(title, message) {
     setToast({ open: false, title, message, key: Date.now() })
     requestAnimationFrame(() => setToast((current) => ({ ...current, open: true })))
+  }
+
+  async function fetchOrders(showLoading = true) {
+    try {
+      if (showLoading) {
+        setIsLoading(true)
+      }
+
+      const data = await requestJson('/api/pedidos')
+      setOrders(Array.isArray(data) ? data.map(normalizeOrder) : [])
+      setSavedAt(new Date().toISOString())
+    } catch (error) {
+      notify('ERROR', error instanceof Error ? error.message : 'Falha ao carregar pedidos')
+    } finally {
+      if (showLoading) {
+        setIsLoading(false)
+      }
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+      })
+    } finally {
+      window.location.href = '/admin/login'
+    }
   }
 
   function handleLoginChange(event) {
@@ -464,22 +527,10 @@ export default function SelecaoGG() {
       loginForm.username.trim() === ADMIN_USERNAME &&
       loginForm.password === ADMIN_PASSWORD
     ) {
-      setIsAuthenticated(true)
-      setLoginError('')
-      setLoginForm({ username: '', password: '' })
       return
     }
 
     setLoginError('Credenciais inválidas')
-  }
-
-  function handleLogout() {
-    setIsAuthenticated(false)
-    setLoginError('')
-    setLoginForm({ username: '', password: '' })
-    setDetailId(null)
-    setDetailDraft(null)
-    setDeleteTarget(null)
   }
 
   function openDetails(order) {
@@ -491,100 +542,134 @@ export default function SelecaoGG() {
     })
   }
 
-  function saveDetails() {
+  async function saveDetails() {
     if (!selectedOrder || !detailDraft) return
-    setOrders((current) =>
-      current.map((order) =>
-        order.id === selectedOrder.id
-          ? {
-              ...order,
-              payStatus: detailDraft.payStatus,
-              orderStatus: detailDraft.orderStatus,
-              notes: detailDraft.notes,
-              history:
-                order.payStatus !== detailDraft.payStatus || order.orderStatus !== detailDraft.orderStatus
-                  ? [
-                      ...order.history,
-                      {
-                        ts: new Date().toISOString(),
-                        desc: `${order.payStatus !== detailDraft.payStatus ? `Pagamento: ${order.payStatus} -> ${detailDraft.payStatus}` : ''}${order.payStatus !== detailDraft.payStatus && order.orderStatus !== detailDraft.orderStatus ? ' | ' : ''}${order.orderStatus !== detailDraft.orderStatus ? `Pedido: ${order.orderStatus} -> ${detailDraft.orderStatus}` : ''}`,
-                      },
-                    ]
-                  : order.history,
-            }
-          : order
-      )
-    )
-    setDetailId(null)
-    setDetailDraft(null)
-    notify('ORDER UPDATED', `${selectedOrder.number} synchronized`)
+
+    try {
+      setIsMutating(true)
+      await requestJson(`/api/pedidos/${selectedOrder.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          pagamento: paymentValueMap[detailDraft.payStatus],
+          status: orderStatusValueMap[detailDraft.orderStatus],
+        }),
+      })
+      await fetchOrders(false)
+      setDetailId(null)
+      setDetailDraft(null)
+      notify('ORDER UPDATED', `${selectedOrder.number} synchronized`)
+    } catch (error) {
+      notify('ERROR', error instanceof Error ? error.message : 'Falha ao atualizar pedido')
+    } finally {
+      setIsMutating(false)
+    }
   }
 
-  function togglePayment(order) {
+  async function togglePayment(order) {
     const next = order.payStatus === 'Pago' ? 'Pendente' : 'Pago'
-    setOrders((current) =>
-      current.map((item) =>
-        item.id === order.id
-          ? {
-              ...item,
-              payStatus: next,
-              history: [...item.history, { ts: new Date().toISOString(), desc: `Pagamento: ${item.payStatus} -> ${next}` }],
-            }
-          : item
-      )
-    )
-    notify('PAYMENT UPDATED', `${order.number} -> ${next}`)
-  }
 
-  function updateRowStatus(order, next) {
-    setOrders((current) =>
-      current.map((item) =>
-        item.id === order.id
-          ? {
-              ...item,
-              orderStatus: next,
-              history: [...item.history, { ts: new Date().toISOString(), desc: `Pedido: ${item.orderStatus} -> ${next}` }],
-            }
-          : item
-      )
-    )
-    notify('STATUS UPDATED', `${order.number} -> ${next}`)
-  }
-
-  function createOrder() {
-    const entry = {
-      ...newOrder,
-      client: newOrder.client.trim(),
-      shirtName: newOrder.shirtName.trim().toUpperCase(),
-      shirtNumber: newOrder.shirtNumber.trim(),
-      notes: newOrder.notes.trim(),
-      history: [{ ts: new Date().toISOString(), desc: 'Pedido criado' }],
+    try {
+      setIsMutating(true)
+      await requestJson(`/api/pedidos/${order.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          pagamento: paymentValueMap[next],
+        }),
+      })
+      await fetchOrders(false)
+      notify('PAYMENT UPDATED', `${order.number} -> ${next}`)
+    } catch (error) {
+      notify('ERROR', error instanceof Error ? error.message : 'Falha ao atualizar pagamento')
+    } finally {
+      setIsMutating(false)
     }
-    setOrders((current) => [entry, ...current])
-    setNewOrder(createNextDraft([entry, ...orders]))
-    notify('ORDER CREATED', `${entry.number} registered`)
   }
 
-  function removeOrder() {
+  async function updateRowStatus(order, next) {
+    try {
+      setIsMutating(true)
+      await requestJson(`/api/pedidos/${order.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          status: orderStatusValueMap[next],
+        }),
+      })
+      await fetchOrders(false)
+      notify('STATUS UPDATED', `${order.number} -> ${next}`)
+    } catch (error) {
+      notify('ERROR', error instanceof Error ? error.message : 'Falha ao atualizar status')
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
+  async function createOrder() {
+    if (!newOrder.client.trim() || !newOrder.shirtName.trim() || !newOrder.shirtNumber.trim()) {
+      notify('ERROR', 'Preencha cliente, nome e número da camisa')
+      return
+    }
+
+    try {
+      setIsMutating(true)
+      await requestJson('/api/pedidos', {
+        method: 'POST',
+        body: JSON.stringify(buildPedidoPayload(newOrder)),
+      })
+      await fetchOrders(false)
+      setNewOrder(createNextDraft())
+      notify('ORDER CREATED', 'Pedido cadastrado com sucesso')
+    } catch (error) {
+      notify('ERROR', error instanceof Error ? error.message : 'Falha ao criar pedido')
+    } finally {
+      setIsMutating(false)
+    }
+  }
+
+  async function removeOrder() {
     if (!deleteTarget) return
-    setOrders((current) => current.filter((order) => order.id !== deleteTarget.id))
-    setDeleteTarget(null)
-    notify('ORDER REMOVED', 'Record deleted from panel')
+
+    try {
+      setIsMutating(true)
+      await requestJson(`/api/pedidos/${deleteTarget.id}`, {
+        method: 'DELETE',
+      })
+      await fetchOrders(false)
+      setDeleteTarget(null)
+      notify('ORDER REMOVED', 'Record deleted from panel')
+    } catch (error) {
+      notify('ERROR', error instanceof Error ? error.message : 'Falha ao remover pedido')
+    } finally {
+      setIsMutating(false)
+    }
   }
 
-  function clearAllData() {
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem(STORAGE_KEY)
+  async function clearAllData() {
+    if (orders.length === 0) {
+      setClearDataOpen(false)
+      return
     }
-    skipNextSaveRef.current = true
-    setOrders([])
-    setNewOrder(createNextDraft([]))
-    setDetailId(null)
-    setDetailDraft(null)
-    setDeleteTarget(null)
-    setClearDataOpen(false)
-    setSavedAt(new Date().toISOString())
-    notify('DADOS', 'Dados removidos.')
+
+    try {
+      setIsMutating(true)
+
+      for (const order of orders) {
+        await requestJson(`/api/pedidos/${order.id}`, {
+          method: 'DELETE',
+        })
+      }
+
+      await fetchOrders(false)
+      setNewOrder(createNextDraft())
+      setDetailId(null)
+      setDetailDraft(null)
+      setDeleteTarget(null)
+      setClearDataOpen(false)
+      notify('DADOS', 'Dados removidos.')
+    } catch (error) {
+      notify('ERROR', error instanceof Error ? error.message : 'Falha ao limpar pedidos')
+    } finally {
+      setIsMutating(false)
+    }
   }
 
   function toggleSort(key) {
@@ -631,7 +716,7 @@ export default function SelecaoGG() {
   }
 
   function resetNewOrder() {
-    setNewOrder(createNextDraft(orders))
+    setNewOrder(createNextDraft())
   }
 
   return (
@@ -639,7 +724,7 @@ export default function SelecaoGG() {
       <Toast.Provider swipeDirection="right">
         <div className="sgg-shell min-h-screen text-[#f0fdf4]">
           <style>{fontStyles}</style>
-          {!isAuthenticated ? (
+          {false ? (
             <div className="flex min-h-screen items-center justify-center p-4">
               <div className="w-full max-w-[380px] rounded-md border border-[#1a2e1a] bg-[#0f1a0f] p-6 shadow-2xl">
                 <div className="text-center">
@@ -702,7 +787,7 @@ export default function SelecaoGG() {
                   SELECAO.GG
                 </h1>
                 <span className="sgg-mono text-xs uppercase tracking-[0.18em] text-[#6b7280]">
-                  / pedidos
+                  / {activeTab === 'pedidos' ? 'pedidos' : 'preços'}
                 </span>
               </div>
 
@@ -740,6 +825,32 @@ export default function SelecaoGG() {
           </header>
 
           <div className="sgg-fade-in mx-auto max-w-7xl px-4 pb-6 pt-[72px] sm:px-6">
+            <section className="mb-4 flex flex-wrap items-center gap-2">
+              {[
+                ['pedidos', 'Pedidos', ClipboardList],
+                ['precos', 'Preços', CircleDollarSign],
+              ].map(([tabId, label, Icon]) => (
+                <button
+                  key={tabId}
+                  type="button"
+                  onClick={() => setActiveTab(tabId)}
+                  className={`sgg-mono inline-flex h-10 items-center gap-2 rounded-md border px-4 text-[11px] uppercase tracking-[0.2em] transition ${
+                    activeTab === tabId
+                      ? 'border-[#22c55e] bg-[#103114] text-[#f0fdf4]'
+                      : 'border-[#1a2e1a] bg-[#0f1a0f] text-[#6b7280] hover:border-[#22c55e] hover:text-[#22c55e]'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+              <div className="sgg-mono ml-auto text-xs uppercase tracking-[0.18em] text-[#6b7280]">
+                {activeTab === 'pedidos' ? 'painel operacional' : 'calculadora de margem'}
+              </div>
+            </section>
+
+            {activeTab === 'pedidos' ? (
+            <>
             <section className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               {[
                 ['PEDIDOS', summary.total, ClipboardList],
@@ -865,7 +976,16 @@ export default function SelecaoGG() {
                       </tr>
                     </thead>
                     <tbody>
-                      {visibleOrders.length === 0 ? (
+                      {isLoading ? (
+                        <tr>
+                          <td colSpan={8} className="px-3 py-12">
+                            <div className="flex flex-col items-center justify-center gap-3 text-zinc-600">
+                              <Package className="h-6 w-6 animate-pulse" />
+                              <span className="sgg-mono text-xs uppercase tracking-[0.24em]">carregando pedidos</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : visibleOrders.length === 0 ? (
                         <tr>
                           <td colSpan={8} className="px-3 py-12">
                             <div className="flex flex-col items-center justify-center gap-3 text-zinc-600">
@@ -974,20 +1094,213 @@ export default function SelecaoGG() {
                   <TerminalSelect value={newOrder.size} onValueChange={(value) => setNewOrder((c) => ({ ...c, size: value }))} options={sizes} />
                   <TerminalSelect value={newOrder.payStatus} onValueChange={(value) => setNewOrder((c) => ({ ...c, payStatus: value }))} options={payStatuses} />
                   <TerminalSelect value={newOrder.orderStatus} onValueChange={(value) => setNewOrder((c) => ({ ...c, orderStatus: value }))} options={orderStatuses} />
-                  <textarea className={`${TEXT_INPUT} h-auto py-2`} rows={5} placeholder="Observacoes internas" value={newOrder.notes} onChange={(e) => setNewOrder((c) => ({ ...c, notes: e.target.value }))} />
-                  <button onClick={createOrder} className="sgg-mono inline-flex h-10 items-center justify-center rounded-md bg-green-600 text-sm uppercase tracking-[0.18em] text-white transition hover:bg-green-500">
-                    Criar pedido
+                  <textarea disabled className={`${TEXT_INPUT} h-auto py-2 disabled:cursor-not-allowed disabled:opacity-60`} rows={5} placeholder="Observações não sincronizadas com o banco" value={newOrder.notes} onChange={(e) => setNewOrder((c) => ({ ...c, notes: e.target.value }))} />
+                  <button disabled={isMutating} onClick={createOrder} className="sgg-mono inline-flex h-10 items-center justify-center rounded-md bg-green-600 text-sm uppercase tracking-[0.18em] text-white transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-60">
+                    {isMutating ? 'Salvando...' : 'Criar pedido'}
                   </button>
                 </div>
               </div>
             </section>
+            </>
+            ) : (
+            <>
+            <section className={`${SURFACE} mb-4 overflow-hidden`}>
+              <div className="flex items-center justify-between border-b border-[#1a2e1a] px-4 py-3">
+                <h2 className="sgg-heading text-lg uppercase tracking-[0.12em]">Configurações</h2>
+                <div className="sgg-mono text-xs uppercase tracking-[0.18em] text-[#6b7280]">
+                  câmbio aplicado: {exchangeRate > 0 ? `R$ ${exchangeRate.toFixed(2)}` : '--'}
+                </div>
+              </div>
 
-            <footer className="mt-4 flex h-10 items-center justify-between border-t border-[#1a2e1a] text-xs text-[#6b7280]">
+              <div className="grid gap-4 p-4 lg:grid-cols-2 xl:grid-cols-4">
+                <div className={`${SURFACE} bg-[#080c08] px-4 py-3`}>
+                  <div className="sgg-mono text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">Margem de lucro</div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {pricingMargins.map((margin) => (
+                      <button
+                        key={margin.label}
+                        type="button"
+                        onClick={() => setSelectedMargin(margin.value)}
+                        className={`sgg-mono inline-flex h-9 items-center rounded-md border px-3 text-[11px] uppercase tracking-[0.2em] transition ${
+                          selectedMargin === margin.value
+                            ? 'border-[#22c55e] bg-[#103114] text-[#f0fdf4]'
+                            : 'border-[#1a2e1a] text-[#6b7280] hover:border-[#22c55e] hover:text-[#22c55e]'
+                        }`}
+                      >
+                        {margin.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={`${SURFACE} bg-[#080c08] px-4 py-3`}>
+                  <div className="sgg-mono text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">Personalização</div>
+                  <button
+                    type="button"
+                    onClick={() => setPersonalizationEnabled((current) => !current)}
+                    className={`mt-3 flex w-full items-center justify-between rounded-md border px-3 py-3 text-left transition ${
+                      personalizationEnabled
+                        ? 'border-[#22c55e] bg-[#103114]'
+                        : 'border-[#1a2e1a] bg-[#0f1a0f]'
+                    }`}
+                  >
+                    <div>
+                      <div className="sgg-mono text-[11px] uppercase tracking-[0.18em] text-[#f0fdf4]">+ Nome e número</div>
+                      <div className="mt-1 text-sm text-[#6b7280]">Adiciona {usd(3)} ao fornecedor</div>
+                    </div>
+                    <span className={`inline-flex h-6 min-w-12 items-center rounded-full border px-2 text-[10px] uppercase tracking-[0.2em] ${
+                      personalizationEnabled
+                        ? 'border-[#1a3a23] bg-[#0f1f14] text-[#86efac]'
+                        : 'border-[#2a332a] bg-[#111611] text-[#9ca3af]'
+                    }`}>
+                      {personalizationEnabled ? 'On' : 'Off'}
+                    </span>
+                  </button>
+                </div>
+
+                <div className={`${SURFACE} bg-[#080c08] px-4 py-3`}>
+                  <div className="sgg-mono text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">Quantidade</div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {[
+                      ['kit', '4+ peças'],
+                      ['avulso', 'Menos de 4'],
+                    ].map(([mode, label]) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setSelectedQuantityMode(mode)}
+                        className={`sgg-mono inline-flex h-9 items-center rounded-md border px-3 text-[11px] uppercase tracking-[0.2em] transition ${
+                          selectedQuantityMode === mode
+                            ? mode === 'kit'
+                              ? 'border-[#22c55e] bg-[#103114] text-[#f0fdf4]'
+                              : 'border-[#f97316] bg-[#221208] text-[#fdba74]'
+                            : 'border-[#1a2e1a] text-[#6b7280] hover:border-[#22c55e] hover:text-[#22c55e]'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={`${SURFACE} bg-[#080c08] px-4 py-3`}>
+                  <div className="sgg-mono text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">Câmbio R$/US$</div>
+                  <input
+                    value={exchangeRateInput}
+                    onChange={(event) => setExchangeRateInput(event.target.value)}
+                    inputMode="decimal"
+                    className={`${TEXT_INPUT} mt-3`}
+                    placeholder="5.23"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {orderedPricingGroups.map((group) => (
+              <section
+                key={group.id}
+                className={`${SURFACE} mb-4 overflow-hidden ${
+                  selectedQuantityMode === group.id
+                    ? group.id === 'kit'
+                      ? 'border-[#1f5f34]'
+                      : 'border-[#7c2d12]'
+                    : ''
+                }`}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1a2e1a] px-4 py-3">
+                  <div>
+                    <h2 className="sgg-heading text-lg uppercase tracking-[0.12em]">{group.title}</h2>
+                    <p className="mt-1 text-sm text-[#6b7280]">{group.note}</p>
+                  </div>
+                  <div className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-medium uppercase tracking-[0.24em] ${
+                    group.id === 'kit'
+                      ? 'border-[#1a3a23] bg-[#0f1f14] text-[#86efac]'
+                      : 'border-[#5b3410] bg-[#201206] text-[#fdba74]'
+                  }`}>
+                    {group.badge}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
+                  {pricingProducts.map((product) => {
+                    const card = pricingCard(product, group, exchangeRate, selectedMargin, personalizationEnabled)
+
+                    return (
+                      <article
+                        key={`${group.id}-${product.id}`}
+                        className={`${SURFACE} overflow-hidden border-l-2 ${
+                          group.id === 'kit' ? 'border-l-green-600' : 'border-l-orange-500'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3 border-b border-[#1a2e1a] px-4 py-3">
+                          <div>
+                            <h3 className="sgg-heading text-lg uppercase tracking-[0.1em]">{product.label}</h3>
+                            <p className="sgg-mono mt-1 text-[11px] uppercase tracking-[0.18em] text-[#6b7280]">
+                              margem {Math.round(selectedMargin * 100)}%
+                            </p>
+                          </div>
+                          <span className={`inline-flex items-center rounded-full border px-2 py-1 text-[10px] uppercase tracking-[0.22em] ${
+                            group.id === 'kit'
+                              ? 'border-[#1a3a23] bg-[#0f1f14] text-[#86efac]'
+                              : 'border-[#5b3410] bg-[#201206] text-[#fdba74]'
+                          }`}>
+                            {group.badge}
+                          </span>
+                        </div>
+
+                        <div className="space-y-3 px-4 py-4">
+                          <div className="flex items-center justify-between gap-3 text-sm">
+                            <span className="text-[#6b7280]">Fornecedor</span>
+                            <span className="sgg-mono text-right text-[#f0fdf4]">
+                              {usd(card.supplierUsd)} → {brl(card.supplierBrl)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-3 text-sm">
+                            <span className="text-[#6b7280]">Frete</span>
+                            <span className="sgg-mono text-right text-[#f0fdf4]">
+                              {group.id === 'kit' ? 'Grátis' : `${usd(card.shippingUsd)} → ${brl(card.shippingBrl)}`}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-3 text-sm">
+                            <span className="text-[#6b7280]">Taxa RF</span>
+                            <span className="sgg-mono text-right text-[#f0fdf4]">{group.taxLabel}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-3 border-t border-[#1a2e1a] pt-3 text-sm">
+                            <span className="text-[#6b7280]">Custo total</span>
+                            <span className="sgg-mono text-right text-[#f0fdf4]">{brl(card.totalCost)}</span>
+                          </div>
+
+                          <div className="rounded-md border border-[#1a3a23] bg-[#0f1f14] px-4 py-4">
+                            <div className="sgg-mono text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">Preço de venda</div>
+                            <div className="mt-2 text-3xl font-bold text-[#86efac]">{brl(card.salePrice)}</div>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-3 rounded-md border border-[#1a2e1a] bg-[#080c08] px-3 py-3 text-sm">
+                            <span className="text-[#6b7280]">Lucro por peça</span>
+                            <span className="sgg-mono text-right text-[#f0fdf4]">{brl(card.profit)}</span>
+                          </div>
+                        </div>
+                      </article>
+                    )
+                  })}
+                </div>
+              </section>
+            ))}
+            </>
+            )}
+
+            <footer className="mt-4 flex min-h-10 flex-wrap items-center justify-between gap-2 border-t border-[#1a2e1a] py-3 text-xs text-[#6b7280]">
               <span className="sgg-mono uppercase tracking-[0.18em]">© SELECAO.GG</span>
-              <span className="sgg-mono inline-flex items-center gap-2 uppercase tracking-[0.14em] text-zinc-500">
-                <Save className="h-3.5 w-3.5" />
-                salvo às {savedAt ? saveTimeLabel(savedAt) : '--:--:--'}
-              </span>
+              {activeTab === 'pedidos' ? (
+                <span className="sgg-mono inline-flex items-center gap-2 uppercase tracking-[0.14em] text-zinc-500">
+                  <Save className="h-3.5 w-3.5" />
+                  sincronizado às {savedAt ? saveTimeLabel(savedAt) : '--:--:--'}
+                </span>
+              ) : (
+                <span className="sgg-mono text-[11px] uppercase tracking-[0.14em] text-zinc-500">
+                  frete avulso: {usd(4)} por peça | kit com 4+ peças: frete grátis e taxa RF diluída por unidade
+                </span>
+              )}
             </footer>
           </div>
 
@@ -1058,9 +1371,9 @@ export default function SelecaoGG() {
                         <div className="space-y-3">
                           <TerminalSelect value={detailDraft.payStatus} onValueChange={(value) => setDetailDraft((current) => ({ ...current, payStatus: value }))} options={payStatuses} />
                           <TerminalSelect value={detailDraft.orderStatus} onValueChange={(value) => setDetailDraft((current) => ({ ...current, orderStatus: value }))} options={orderStatuses} />
-                          <textarea value={detailDraft.notes} onChange={(event) => setDetailDraft((current) => ({ ...current, notes: event.target.value }))} rows={8} className={`${TEXT_INPUT} h-auto py-2`} placeholder="Internal notes" />
-                          <button onClick={saveDetails} className="inline-flex h-10 w-full items-center justify-center rounded-md border border-[#22c55e] text-sm font-medium uppercase tracking-[0.18em] text-[#22c55e] transition hover:bg-[#103114]">
-                            Save
+                          <textarea disabled value={detailDraft.notes} rows={8} className={`${TEXT_INPUT} h-auto py-2 disabled:cursor-not-allowed disabled:opacity-60`} placeholder="Notas não sincronizadas com o banco" />
+                          <button disabled={isMutating} onClick={saveDetails} className="inline-flex h-10 w-full items-center justify-center rounded-md border border-[#22c55e] text-sm font-medium uppercase tracking-[0.18em] text-[#22c55e] transition hover:bg-[#103114] disabled:cursor-not-allowed disabled:opacity-60">
+                            {isMutating ? 'Saving...' : 'Save'}
                           </button>
                         </div>
                       </div>
@@ -1087,7 +1400,7 @@ export default function SelecaoGG() {
                     <button className="inline-flex h-10 items-center rounded-md border border-[#1a2e1a] px-3 text-sm text-[#f0fdf4]">Cancel</button>
                   </AlertDialog.Cancel>
                   <AlertDialog.Action asChild>
-                    <button onClick={removeOrder} className="inline-flex h-10 items-center rounded-md border border-[#3f1f23] bg-[#1b1113] px-3 text-sm text-[#fca5a5]">Delete</button>
+                    <button disabled={isMutating} onClick={removeOrder} className="inline-flex h-10 items-center rounded-md border border-[#3f1f23] bg-[#1b1113] px-3 text-sm text-[#fca5a5] disabled:cursor-not-allowed disabled:opacity-60">Delete</button>
                   </AlertDialog.Action>
                 </div>
               </AlertDialog.Content>
@@ -1103,14 +1416,14 @@ export default function SelecaoGG() {
                   <AlertDialog.Title className="sgg-heading text-lg uppercase tracking-[0.12em]">Limpar Dados</AlertDialog.Title>
                 </div>
                 <AlertDialog.Description className="text-sm text-[#6b7280]">
-                  Remover todos os pedidos salvos deste navegador?
+                  Remover todos os pedidos salvos no banco?
                 </AlertDialog.Description>
                 <div className="mt-4 flex justify-end gap-2">
                   <AlertDialog.Cancel asChild>
                     <button className="inline-flex h-10 items-center rounded-md border border-[#1a2e1a] px-3 text-sm text-[#f0fdf4]">Cancelar</button>
                   </AlertDialog.Cancel>
                   <AlertDialog.Action asChild>
-                    <button onClick={clearAllData} className="inline-flex h-10 items-center rounded-md border border-[#3f1f23] bg-[#1b1113] px-3 text-sm text-[#fca5a5]">Remover</button>
+                    <button disabled={isMutating} onClick={clearAllData} className="inline-flex h-10 items-center rounded-md border border-[#3f1f23] bg-[#1b1113] px-3 text-sm text-[#fca5a5] disabled:cursor-not-allowed disabled:opacity-60">Remover</button>
                   </AlertDialog.Action>
                 </div>
               </AlertDialog.Content>
