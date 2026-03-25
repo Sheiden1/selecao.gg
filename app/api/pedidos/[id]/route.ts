@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { supabase, type Pedido } from '@/lib/supabase'
+import { getSupabase, type Pedido } from '@/lib/supabase'
 
 type RouteContext = {
   params: Promise<{
@@ -10,6 +10,7 @@ type RouteContext = {
 
 export async function PATCH(request: Request, { params }: RouteContext) {
   try {
+    const supabase = getSupabase()
     const { id } = await params
     const body = (await request.json()) as Partial<Pedido>
     const updates = Object.fromEntries(
@@ -40,6 +41,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
   try {
+    const supabase = getSupabase()
     const { id } = await params
 
     const { error } = await supabase.from('pedidos').delete().eq('id', id)
