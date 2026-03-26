@@ -89,6 +89,72 @@ function orderPrice(order) {
   return base + 34
 }
 
+function parsePriceInput(value) {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const cleaned = value.trim().replace(/[^\d,.-]/g, '')
+
+  if (!cleaned) {
+    return null
+  }
+
+  const lastComma = cleaned.lastIndexOf(',')
+  const lastDot = cleaned.lastIndexOf('.')
+  let normalized = cleaned
+
+  if (lastComma > lastDot) {
+    normalized = cleaned.replace(/\./g, '').replace(',', '.')
+  } else if (lastDot > lastComma) {
+    normalized = cleaned.replace(/,/g, '')
+  } else {
+    normalized = cleaned.replace(',', '.')
+  }
+
+  const parsed = Number.parseFloat(normalized)
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed * 100) / 100 : null
+}
+
+function formatPriceInput(value) {
+  return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2).replace('.', ',') : ''
+}
+
+function parseStoredNotes(value) {
+  const source = typeof value === 'string' ? value : ''
+  const matches = [...source.matchAll(/\[\[charged_price:(\d+(?:\.\d{1,2})?)\]\]/gi)]
+  const chargedPrice = matches.length > 0 ? Number.parseFloat(matches[matches.length - 1][1]) : null
+  const notes = source
+    .replace(/\s*\[\[charged_price:\d+(?:\.\d{1,2})\]\]\s*/gi, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+  return {
+    notes,
+    chargedPrice,
+  }
+}
+
+function buildStoredNotes(notes, chargedPriceInput) {
+  const visibleNotes = typeof notes === 'string' ? notes.trim() : ''
+  const chargedPrice = parsePriceInput(chargedPriceInput)
+  const parts = []
+
+  if (visibleNotes) {
+    parts.push(visibleNotes)
+  }
+
+  if (chargedPrice !== null) {
+    parts.push(`[[charged_price:${chargedPrice.toFixed(2)}]]`)
+  }
+
+  return parts.join('\n') || null
+}
+
+function orderRevenue(order) {
+  return order.chargedPrice ?? orderPrice(order)
+}
+
 function daysAgoLabel(value) {
   const target = new Date(`${value}T00:00:00`)
   const today = new Date()
@@ -175,6 +241,7 @@ function createNextDraft() {
     payStatus: 'Pendente',
     orderStatus: 'Aguardando',
     date: new Date().toISOString().slice(0, 10),
+    chargedPriceInput: '',
     notes: '',
     history: [],
   }
@@ -190,6 +257,7 @@ function orderNumberLabel(id) {
 
 function normalizeOrder(order) {
   const createdAt = order.criado_em ?? new Date().toISOString()
+  const { notes, chargedPrice } = parseStoredNotes(order.observacoes)
 
   return {
     id: String(order.id ?? createdAt),
@@ -202,7 +270,8 @@ function normalizeOrder(order) {
     orderStatus: orderStatusLabelMap[order.status] ?? 'Aguardando',
     date: createdAt.slice(0, 10),
     createdAt,
-    notes: order.observacoes ?? '',
+    chargedPrice,
+    notes,
     history: [{ ts: createdAt, desc: 'Pedido criado' }],
   }
 }
@@ -213,7 +282,7 @@ function buildPedidoPayload(order) {
     camisa: order.shirtName.trim().toUpperCase(),
     numero: order.shirtNumber.trim(),
     tamanho: order.size,
-    observacoes: order.notes.trim() || null,
+    observacoes: buildStoredNotes(order.notes, order.chargedPriceInput),
     pagamento: paymentValueMap[order.payStatus] ?? 'pendente',
     status: orderStatusValueMap[order.orderStatus] ?? 'aguardando',
     criado_em: order.date ? `${order.date}T00:00:00` : undefined,
@@ -474,7 +543,7 @@ export default function SelecaoGG() {
     total: orders.length,
     pending: orders.filter((order) => order.payStatus === 'Pendente').length,
     ready: orders.filter((order) => order.orderStatus === 'Pronto').length,
-    revenue: orders.filter((order) => order.payStatus === 'Pago').reduce((sum, order) => sum + orderPrice(order), 0),
+    revenue: orders.filter((order) => order.payStatus === 'Pago').reduce((sum, order) => sum + orderRevenue(order), 0),
   }
   const orderedPricingGroups = selectedQuantityMode === 'kit'
     ? [pricingGroups[1], pricingGroups[0]]
@@ -539,6 +608,7 @@ export default function SelecaoGG() {
     setDetailDraft({
       payStatus: order.payStatus,
       orderStatus: order.orderStatus,
+      chargedPriceInput: formatPriceInput(order.chargedPrice),
       notes: order.notes,
     })
   }
@@ -551,7 +621,7 @@ export default function SelecaoGG() {
       await requestJson(`/api/pedidos/${selectedOrder.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
-          observacoes: detailDraft.notes.trim() || null,
+          observacoes: buildStoredNotes(detailDraft.notes, detailDraft.chargedPriceInput),
           pagamento: paymentValueMap[detailDraft.payStatus],
           status: orderStatusValueMap[detailDraft.orderStatus],
         }),
@@ -683,7 +753,7 @@ export default function SelecaoGG() {
   }
 
   function exportCsv() {
-    const headers = ['Pedido', 'Cliente', 'Camisa', 'Numero', 'Tamanho', 'Pagamento', 'Status', 'Data', 'Notas']
+    const headers = ['Pedido', 'Cliente', 'Camisa', 'Numero', 'Tamanho', 'Pagamento', 'Status', 'Data', 'Cobrado', 'Notas']
     const rows = visibleOrders.map((order) => [
       order.number,
       order.client,
@@ -693,6 +763,7 @@ export default function SelecaoGG() {
       order.payStatus,
       order.orderStatus,
       order.date,
+      orderRevenue(order),
       order.notes,
     ])
 
@@ -1096,6 +1167,12 @@ export default function SelecaoGG() {
                   <TerminalSelect value={newOrder.size} onValueChange={(value) => setNewOrder((c) => ({ ...c, size: value }))} options={sizes} />
                   <TerminalSelect value={newOrder.payStatus} onValueChange={(value) => setNewOrder((c) => ({ ...c, payStatus: value }))} options={payStatuses} />
                   <TerminalSelect value={newOrder.orderStatus} onValueChange={(value) => setNewOrder((c) => ({ ...c, orderStatus: value }))} options={orderStatuses} />
+                  <div>
+                    <input className={TEXT_INPUT} inputMode="decimal" placeholder="Valor cobrado (ex: 299,90)" value={newOrder.chargedPriceInput} onChange={(e) => setNewOrder((c) => ({ ...c, chargedPriceInput: e.target.value }))} />
+                    <div className="mt-1 text-xs text-[#6b7280]">
+                      Receita deste pedido: {money(parsePriceInput(newOrder.chargedPriceInput) ?? orderPrice(newOrder))}
+                    </div>
+                  </div>
                   <textarea className={`${TEXT_INPUT} h-auto py-2`} rows={5} placeholder="Observacoes do pedido" value={newOrder.notes} onChange={(e) => setNewOrder((c) => ({ ...c, notes: e.target.value }))} />
                   <button disabled={isMutating} onClick={createOrder} className="sgg-mono inline-flex h-10 items-center justify-center rounded-md bg-green-600 text-sm uppercase tracking-[0.18em] text-white transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-60">
                     {isMutating ? 'Salvando...' : 'Criar pedido'}
@@ -1344,7 +1421,8 @@ export default function SelecaoGG() {
                               ['NUMBER', selectedOrder.shirtNumber],
                               ['SIZE', selectedOrder.size],
                               ['DATE', shortDate(selectedOrder.date)],
-                              ['PRICE', money(orderPrice(selectedOrder))],
+                              ['COBRADO', money(orderRevenue(selectedOrder))],
+                              ['BASE', money(orderPrice(selectedOrder))],
                             ].map(([label, value]) => (
                               <div key={label}>
                                 <div className="text-[10px] uppercase tracking-[0.24em] text-[#6b7280]">{label}</div>
@@ -1373,6 +1451,12 @@ export default function SelecaoGG() {
                         <div className="space-y-3">
                           <TerminalSelect value={detailDraft.payStatus} onValueChange={(value) => setDetailDraft((current) => ({ ...current, payStatus: value }))} options={payStatuses} />
                           <TerminalSelect value={detailDraft.orderStatus} onValueChange={(value) => setDetailDraft((current) => ({ ...current, orderStatus: value }))} options={orderStatuses} />
+                          <div>
+                            <input value={detailDraft.chargedPriceInput} onChange={(event) => setDetailDraft((current) => ({ ...current, chargedPriceInput: event.target.value }))} inputMode="decimal" className={TEXT_INPUT} placeholder="Valor cobrado (ex: 299,90)" />
+                            <div className="mt-1 text-xs text-[#6b7280]">
+                              Receita deste pedido: {money(parsePriceInput(detailDraft.chargedPriceInput) ?? orderPrice(selectedOrder))}
+                            </div>
+                          </div>
                           <textarea value={detailDraft.notes} onChange={(event) => setDetailDraft((current) => ({ ...current, notes: event.target.value }))} rows={8} className={`${TEXT_INPUT} h-auto py-2`} placeholder="Observacoes do pedido" />
                           <button disabled={isMutating} onClick={saveDetails} className="inline-flex h-10 w-full items-center justify-center rounded-md border border-[#22c55e] text-sm font-medium uppercase tracking-[0.18em] text-[#22c55e] transition hover:bg-[#103114] disabled:cursor-not-allowed disabled:opacity-60">
                             {isMutating ? 'Saving...' : 'Save'}
