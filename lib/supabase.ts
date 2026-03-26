@@ -1,15 +1,54 @@
 import { createClient } from '@supabase/supabase-js'
 
+const SUPABASE_URL_ENV_KEYS = ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_URL'] as const
+const SUPABASE_KEY_ENV_KEYS = [
+  'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY',
+  'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+  'SUPABASE_PUBLISHABLE_DEFAULT_KEY',
+  'SUPABASE_PUBLISHABLE_KEY',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+  'SUPABASE_ANON_KEY',
+] as const
+
+function readEnv(name: string) {
+  const value = process.env[name]?.trim()
+
+  if (!value) {
+    return null
+  }
+
+  const normalized = value.toLowerCase()
+  if (
+    normalized === 'your_supabase_url' ||
+    normalized === 'your_supabase_key' ||
+    normalized === 'your_anon_key' ||
+    normalized === 'your_publishable_key'
+  ) {
+    return null
+  }
+
+  return value
+}
+
+function resolveEnvValue(keys: readonly string[]) {
+  for (const key of keys) {
+    const value = readEnv(key)
+
+    if (value) {
+      return value
+    }
+  }
+
+  return null
+}
+
 export function getSupabase() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
-  const supabaseKey = (
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
-  )?.trim()
+  const supabaseUrl = resolveEnvValue(SUPABASE_URL_ENV_KEYS)
+  const supabaseKey = resolveEnvValue(SUPABASE_KEY_ENV_KEYS)
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error(
-      'Variaveis de ambiente do Supabase nao configuradas. Defina NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY (ou NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY).'
+      'Variaveis de ambiente do Supabase nao configuradas. Defina NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_URL, junto com uma chave valida em NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_PUBLISHABLE_DEFAULT_KEY, SUPABASE_PUBLISHABLE_KEY ou SUPABASE_ANON_KEY.'
     )
   }
 
