@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { getSupabase, type Pedido } from '@/lib/supabase'
+import { getErrorMessage, getSupabase, isInputError, parsePedidoUpdate } from '@/lib/supabase'
 
 type RouteContext = {
   params: Promise<{
@@ -12,10 +12,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const supabase = getSupabase()
     const { id } = await params
-    const body = (await request.json()) as Partial<Pedido>
-    const updates = Object.fromEntries(
-      Object.entries(body).filter(([, value]) => value !== undefined)
-    )
+    const updates = parsePedidoUpdate(await request.json())
 
     const { error } = await supabase.from('pedidos').update(updates).eq('id', id)
 
@@ -25,11 +22,13 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     return NextResponse.json({ success: true }, { status: 200 })
   } catch (error) {
+    const message = getErrorMessage(error, 'Erro ao atualizar pedido')
+
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Erro ao atualizar pedido',
+        error: message,
       },
-      { status: 500 }
+      { status: isInputError(error) ? 400 : 500 }
     )
   }
 }
@@ -49,7 +48,7 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Erro ao remover pedido',
+        error: getErrorMessage(error, 'Erro ao remover pedido'),
       },
       { status: 500 }
     )
