@@ -13,6 +13,8 @@ import {
   ChevronUp,
   CircleDollarSign,
   ClipboardList,
+  Eye,
+  EyeOff,
   LogOut,
   MoreHorizontal,
   Package,
@@ -322,6 +324,8 @@ async function requestJson(url, options = {}) {
 }
 
 const pricingMargins = [
+  { label: '20%', value: 0.2 },
+  { label: '25%', value: 0.25 },
   { label: '30%', value: 0.3 },
   { label: '40%', value: 0.4 },
   { label: '50%', value: 0.5 },
@@ -337,21 +341,28 @@ const pricingGroups = [
   {
     id: 'avulso',
     badge: 'Avulso',
-    title: 'PEÇA AVULSA — R$ 150 RECEITA FEDERAL POR PEDIDO',
+    title: 'PEÇA AVULSA — R$ 150 EM TAXAS POR PEDIDO',
     shippingUsd: 4,
     federalTaxBrl: 150,
     taxLabel: 'R$ 150,00',
-    note: 'Frete avulso: US$ 4.00 por peça',
+    note: 'Envio avulso: US$ 4.00 por peça',
   },
   {
     id: 'kit',
     badge: 'Kit',
-    title: 'KIT 4+ PEÇAS — FRETE GRÁTIS, TAXA DILUÍDA',
+    title: 'KIT 4+ PEÇAS — GRÁTIS, TAXA DILUÍDA',
     shippingUsd: 0,
     federalTaxBrl: 37.5,
     taxLabel: 'R$ 37,50 (+4)',
-    note: 'Frete kit: grátis a partir de 4 peças',
+    note: 'Kit: grátis a partir de 4 peças',
   },
+]
+
+const roundingModes = [
+  { id: 'exact', label: 'Exato' },
+  { id: '90', label: 'Final .90' },
+  { id: '99', label: 'Final .99' },
+  { id: 'whole', label: 'Inteiro' },
 ]
 
 function usd(value) {
@@ -367,23 +378,93 @@ function parseExchangeRate(value) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
 }
 
-function pricingCard(product, group, exchangeRate, margin, personalized) {
-  const supplierUsd = product.supplierUsd + (personalized ? 3 : 0)
+function parseMarginInput(value) {
+  const parsed = Number.parseFloat(String(value).replace(',', '.'))
+  if (!Number.isFinite(parsed)) {
+    return null
+  }
+
+  return Math.min(95, Math.max(1, parsed)) / 100
+}
+
+function formatMarginInput(value) {
+  const percentage = Number(value) * 100
+  if (!Number.isFinite(percentage)) {
+    return ''
+  }
+
+  return percentage % 1 === 0 ? String(percentage) : percentage.toFixed(1).replace('.', ',')
+}
+
+function parseQuantityInput(value, min = 1) {
+  const parsed = Number.parseInt(String(value), 10)
+  if (!Number.isFinite(parsed)) {
+    return min
+  }
+
+  return Math.min(99, Math.max(min, parsed))
+}
+
+function roundSalePrice(value, mode) {
+  if (!Number.isFinite(value) || value <= 0) {
+    return 0
+  }
+
+  const normalized = Math.round(value * 100) / 100
+
+  if (mode === 'whole') {
+    return Math.ceil(normalized)
+  }
+
+  if (mode === '90' || mode === '99') {
+    const suffix = mode === '90' ? 0.9 : 0.99
+    let rounded = Math.floor(normalized) + suffix
+
+    if (rounded < normalized) {
+      rounded += 1
+    }
+
+    return Math.round(rounded * 100) / 100
+  }
+
+  return normalized
+}
+
+function pricingCard(product, group, exchangeRate, margin, personalized, quantity, extraCostBrl, roundingMode) {
+  const supplierUsd = product.supplierUsd
   const supplierBrl = supplierUsd * exchangeRate
+  const personalizationUsd = personalized ? 3 : 0
+  const personalizationBrl = personalizationUsd * exchangeRate
   const shippingBrl = group.shippingUsd * exchangeRate
-  const totalCost = supplierBrl + shippingBrl + group.federalTaxBrl
-  const salePrice = margin >= 1 ? totalCost : totalCost / (1 - margin)
+  const extraCostPerUnit = Number.isFinite(extraCostBrl) && extraCostBrl > 0 ? extraCostBrl : 0
+  const totalCost = supplierBrl + personalizationBrl + shippingBrl + group.federalTaxBrl + extraCostPerUnit
+  const rawSalePrice = margin >= 1 ? totalCost : totalCost / (1 - margin)
+  const salePrice = roundSalePrice(rawSalePrice, roundingMode)
   const profit = salePrice - totalCost
+  const quantityValue = Number.isFinite(quantity) && quantity > 0 ? quantity : 1
+  const totalOrderCost = totalCost * quantityValue
+  const totalOrderRevenue = salePrice * quantityValue
+  const totalOrderProfit = profit * quantityValue
+  const realMargin = salePrice > 0 ? profit / salePrice : 0
 
   return {
     supplierUsd,
     supplierBrl,
+    personalizationUsd,
+    personalizationBrl,
     shippingUsd: group.shippingUsd,
     shippingBrl,
+    extraCostPerUnit,
     federalTaxBrl: group.federalTaxBrl,
     totalCost,
+    rawSalePrice,
     salePrice,
     profit,
+    quantity: quantityValue,
+    totalOrderCost,
+    totalOrderRevenue,
+    totalOrderProfit,
+    realMargin,
   }
 }
 
@@ -480,8 +561,13 @@ export default function SelecaoGG() {
   const [isLoading, setIsLoading] = useState(false)
   const [isMutating, setIsMutating] = useState(false)
   const [selectedMargin, setSelectedMargin] = useState(0.4)
+  const [customMarginInput, setCustomMarginInput] = useState('40')
   const [personalizationEnabled, setPersonalizationEnabled] = useState(true)
   const [selectedQuantityMode, setSelectedQuantityMode] = useState('kit')
+  const [quantityInput, setQuantityInput] = useState('4')
+  const [extraCostInput, setExtraCostInput] = useState('')
+  const [roundingMode, setRoundingMode] = useState('exact')
+  const [showPricingValues, setShowPricingValues] = useState(true)
   const [exchangeRateInput, setExchangeRateInput] = useState('5.23')
   const firstFieldRef = useRef(null)
 
@@ -518,8 +604,86 @@ export default function SelecaoGG() {
     setDetailDraft(null)
   }, [detailId, orders])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    try {
+      const raw = window.localStorage.getItem('sgg-pricing-preferences')
+      if (!raw) return
+
+      const saved = JSON.parse(raw)
+
+      if (typeof saved.selectedMargin === 'number') {
+        setSelectedMargin(saved.selectedMargin)
+        setCustomMarginInput(formatMarginInput(saved.selectedMargin))
+      }
+
+      if (typeof saved.personalizationEnabled === 'boolean') {
+        setPersonalizationEnabled(saved.personalizationEnabled)
+      }
+
+      if (saved.selectedQuantityMode === 'kit' || saved.selectedQuantityMode === 'avulso') {
+        setSelectedQuantityMode(saved.selectedQuantityMode)
+      }
+
+      if (typeof saved.quantityInput === 'string') {
+        setQuantityInput(saved.quantityInput)
+      }
+
+      if (typeof saved.extraCostInput === 'string') {
+        setExtraCostInput(saved.extraCostInput)
+      }
+
+      if (saved.roundingMode === 'exact' || saved.roundingMode === '90' || saved.roundingMode === '99' || saved.roundingMode === 'whole') {
+        setRoundingMode(saved.roundingMode)
+      }
+
+      if (typeof saved.showPricingValues === 'boolean') {
+        setShowPricingValues(saved.showPricingValues)
+      }
+
+      if (typeof saved.exchangeRateInput === 'string') {
+        setExchangeRateInput(saved.exchangeRateInput)
+      }
+    } catch {
+      // Ignore invalid stored preferences.
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    window.localStorage.setItem('sgg-pricing-preferences', JSON.stringify({
+      selectedMargin,
+      personalizationEnabled,
+      selectedQuantityMode,
+      quantityInput,
+      extraCostInput,
+      roundingMode,
+      showPricingValues,
+      exchangeRateInput,
+    }))
+  }, [
+    exchangeRateInput,
+    extraCostInput,
+    personalizationEnabled,
+    quantityInput,
+    roundingMode,
+    selectedMargin,
+    selectedQuantityMode,
+    showPricingValues,
+  ])
+
+  useEffect(() => {
+    const minQuantity = selectedQuantityMode === 'kit' ? 4 : 1
+    setQuantityInput((current) => String(parseQuantityInput(current, minQuantity)))
+  }, [selectedQuantityMode])
+
   const selectedOrder = orders.find((order) => order.id === detailId) ?? null
   const exchangeRate = parseExchangeRate(exchangeRateInput)
+  const quantityMin = selectedQuantityMode === 'kit' ? 4 : 1
+  const selectedQuantity = parseQuantityInput(quantityInput, quantityMin)
+  const extraCostPerUnit = parsePriceInput(extraCostInput) ?? 0
   const query = search.trim().toLowerCase()
   const filtered = orders.filter((order) => {
     const searchMatch =
@@ -548,10 +712,51 @@ export default function SelecaoGG() {
   const orderedPricingGroups = selectedQuantityMode === 'kit'
     ? [pricingGroups[1], pricingGroups[0]]
     : [pricingGroups[0], pricingGroups[1]]
+  const activePricingGroup = pricingGroups.find((group) => group.id === selectedQuantityMode) ?? pricingGroups[0]
+  const activeScenarioCards = pricingProducts.map((product) => ({
+    product,
+    card: pricingCard(
+      product,
+      activePricingGroup,
+      exchangeRate,
+      selectedMargin,
+      personalizationEnabled,
+      selectedQuantity,
+      extraCostPerUnit,
+      roundingMode,
+    ),
+  }))
+  const scenarioTotals = activeScenarioCards.reduce((accumulator, entry) => ({
+    totalOrderCost: accumulator.totalOrderCost + entry.card.totalOrderCost,
+    totalOrderRevenue: accumulator.totalOrderRevenue + entry.card.totalOrderRevenue,
+    totalOrderProfit: accumulator.totalOrderProfit + entry.card.totalOrderProfit,
+  }), {
+    totalOrderCost: 0,
+    totalOrderRevenue: 0,
+    totalOrderProfit: 0,
+  })
+  const averageRealMargin = scenarioTotals.totalOrderRevenue > 0
+    ? scenarioTotals.totalOrderProfit / scenarioTotals.totalOrderRevenue
+    : 0
+  const maxProfitEntry = activeScenarioCards.reduce((best, current) => (
+    !best || current.card.totalOrderProfit > best.card.totalOrderProfit ? current : best
+  ), null)
 
   function notify(title, message) {
     setToast({ open: false, title, message, key: Date.now() })
     requestAnimationFrame(() => setToast((current) => ({ ...current, open: true })))
+  }
+
+  function applyCustomMargin() {
+    const parsed = parseMarginInput(customMarginInput)
+
+    if (parsed === null) {
+      notify('MARGEM', 'Digite uma margem válida entre 1% e 95%')
+      return
+    }
+
+    setSelectedMargin(parsed)
+    setCustomMarginInput(formatMarginInput(parsed))
   }
 
   async function fetchOrders(showLoading = true) {
@@ -1199,7 +1404,10 @@ export default function SelecaoGG() {
                       <button
                         key={margin.label}
                         type="button"
-                        onClick={() => setSelectedMargin(margin.value)}
+                        onClick={() => {
+                          setSelectedMargin(margin.value)
+                          setCustomMarginInput(formatMarginInput(margin.value))
+                        }}
                         className={`sgg-mono inline-flex h-9 items-center rounded-md border px-3 text-[11px] uppercase tracking-[0.2em] transition ${
                           selectedMargin === margin.value
                             ? 'border-[#22c55e] bg-[#103114] text-[#f0fdf4]'
@@ -1210,6 +1418,25 @@ export default function SelecaoGG() {
                       </button>
                     ))}
                   </div>
+
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      value={customMarginInput}
+                      onChange={(event) => setCustomMarginInput(event.target.value)}
+                      onBlur={applyCustomMargin}
+                      inputMode="decimal"
+                      className={TEXT_INPUT}
+                      placeholder="Ex: 32,5"
+                    />
+                    <button
+                      type="button"
+                      onClick={applyCustomMargin}
+                      className="sgg-mono inline-flex h-10 shrink-0 items-center rounded-md border border-[#1a2e1a] px-3 text-[11px] uppercase tracking-[0.2em] text-[#6b7280] transition hover:border-[#22c55e] hover:text-[#22c55e]"
+                    >
+                      Aplicar
+                    </button>
+                  </div>
+                  <div className="mt-1 text-xs text-[#6b7280]">Margem livre entre 1% e 95%.</div>
                 </div>
 
                 <div className={`${SURFACE} bg-[#080c08] px-4 py-3`}>
@@ -1225,7 +1452,7 @@ export default function SelecaoGG() {
                   >
                     <div>
                       <div className="sgg-mono text-[11px] uppercase tracking-[0.18em] text-[#f0fdf4]">+ Nome e número</div>
-                      <div className="mt-1 text-sm text-[#6b7280]">Adiciona {usd(3)} ao fornecedor</div>
+                      <div className="mt-1 text-sm text-[#6b7280]">Adiciona {usd(3)} como linha separada no custo</div>
                     </div>
                     <span className={`inline-flex h-6 min-w-12 items-center rounded-full border px-2 text-[10px] uppercase tracking-[0.2em] ${
                       personalizationEnabled
@@ -1260,6 +1487,32 @@ export default function SelecaoGG() {
                       </button>
                     ))}
                   </div>
+
+                  <div className="mt-3 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setQuantityInput(String(Math.max(quantityMin, selectedQuantity - 1)))}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#1a2e1a] text-lg text-[#6b7280] transition hover:border-[#22c55e] hover:text-[#22c55e]"
+                    >
+                      -
+                    </button>
+                    <input
+                      value={quantityInput}
+                      onChange={(event) => setQuantityInput(event.target.value)}
+                      onBlur={() => setQuantityInput(String(parseQuantityInput(quantityInput, quantityMin)))}
+                      inputMode="numeric"
+                      className={`${TEXT_INPUT} text-center`}
+                      placeholder={selectedQuantityMode === 'kit' ? '4' : '1'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setQuantityInput(String(selectedQuantity + 1))}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#1a2e1a] text-lg text-[#6b7280] transition hover:border-[#22c55e] hover:text-[#22c55e]"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div className="mt-1 text-xs text-[#6b7280]">Pedido atual com {selectedQuantity} peça(s).</div>
                 </div>
 
                 <div className={`${SURFACE} bg-[#080c08] px-4 py-3`}>
@@ -1272,6 +1525,136 @@ export default function SelecaoGG() {
                     placeholder="5.23"
                   />
                 </div>
+
+                <div className={`${SURFACE} bg-[#080c08] px-4 py-3`}>
+                  <div className="sgg-mono text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">Custo extra / peça</div>
+                  <input
+                    value={extraCostInput}
+                    onChange={(event) => setExtraCostInput(event.target.value)}
+                    inputMode="decimal"
+                    className={`${TEXT_INPUT} mt-3`}
+                    placeholder="Ex: 5,00"
+                  />
+                  <div className="mt-1 text-xs text-[#6b7280]">Use para embalagem, repasse ou taxa manual.</div>
+                </div>
+
+                <div className={`${SURFACE} bg-[#080c08] px-4 py-3`}>
+                  <div className="sgg-mono text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">Arredondamento</div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {roundingModes.map((mode) => (
+                      <button
+                        key={mode.id}
+                        type="button"
+                        onClick={() => setRoundingMode(mode.id)}
+                        className={`sgg-mono inline-flex h-9 items-center rounded-md border px-3 text-[11px] uppercase tracking-[0.2em] transition ${
+                          roundingMode === mode.id
+                            ? 'border-[#22c55e] bg-[#103114] text-[#f0fdf4]'
+                            : 'border-[#1a2e1a] text-[#6b7280] hover:border-[#22c55e] hover:text-[#22c55e]'
+                        }`}
+                      >
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={`${SURFACE} bg-[#080c08] px-4 py-3 lg:col-span-2 xl:col-span-4`}>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="sgg-mono text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">Visualização</div>
+                      <div className="mt-1 text-sm text-[#6b7280]">Oculta preços de venda e lucros em toda a calculadora.</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowPricingValues((current) => !current)}
+                      className={`sgg-mono inline-flex h-10 items-center gap-2 rounded-md border px-4 text-[11px] uppercase tracking-[0.2em] transition ${
+                        showPricingValues
+                          ? 'border-[#1a3a23] bg-[#0f1f14] text-[#86efac]'
+                          : 'border-[#5b3410] bg-[#201206] text-[#fdba74]'
+                      }`}
+                    >
+                      {showPricingValues ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      {showPricingValues ? 'Ocultar valores' : 'Mostrar valores'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className={`${SURFACE} mb-4 overflow-hidden`}>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1a2e1a] px-4 py-3">
+                <div>
+                  <h2 className="sgg-heading text-lg uppercase tracking-[0.12em]">Resumo do cenário</h2>
+                  <p className="mt-1 text-sm text-[#6b7280]">
+                    {activePricingGroup.badge} | {selectedQuantity} peça(s) | margem alvo {Math.round(selectedMargin * 1000) / 10}%
+                  </p>
+                </div>
+                <div className="sgg-mono text-[11px] uppercase tracking-[0.18em] text-[#6b7280]">
+                  arredondamento: {roundingModes.find((mode) => mode.id === roundingMode)?.label ?? 'Exato'}
+                </div>
+              </div>
+
+              <div className="grid gap-4 p-4 lg:grid-cols-4">
+                <div className={`${SURFACE} bg-[#080c08] px-4 py-4`}>
+                  <div className="sgg-mono text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">Custo total combinado</div>
+                  <div className="mt-2 text-2xl font-semibold text-[#f0fdf4]">{brl(scenarioTotals.totalOrderCost)}</div>
+                </div>
+                <div className={`${SURFACE} bg-[#0f1f14] px-4 py-4`}>
+                  <div className="sgg-mono text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">Venda total combinada</div>
+                  <div className="mt-2 text-2xl font-semibold text-[#86efac]">
+                    {showPricingValues ? brl(scenarioTotals.totalOrderRevenue) : 'R$ ----'}
+                  </div>
+                </div>
+                <div className={`${SURFACE} bg-[#080c08] px-4 py-4`}>
+                  <div className="sgg-mono text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">Lucro total combinado</div>
+                  <div className="mt-2 text-2xl font-semibold text-[#f0fdf4]">
+                    {showPricingValues ? brl(scenarioTotals.totalOrderProfit) : 'R$ ----'}
+                  </div>
+                </div>
+                <div className={`${SURFACE} bg-[#080c08] px-4 py-4`}>
+                  <div className="sgg-mono text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">Margem real média</div>
+                  <div className="mt-2 text-2xl font-semibold text-[#f0fdf4]">{(averageRealMargin * 100).toFixed(1)}%</div>
+                  <div className="mt-1 text-xs text-[#6b7280]">
+                    maior lucro: {maxProfitEntry ? maxProfitEntry.product.label : '--'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 border-t border-[#1a2e1a] p-4 md:grid-cols-2 xl:grid-cols-3">
+                {activeScenarioCards.map(({ product, card }) => (
+                  <article key={`summary-${product.id}`} className={`${SURFACE} bg-[#080c08] px-4 py-4`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h3 className="sgg-heading text-base uppercase tracking-[0.1em]">{product.label}</h3>
+                        <p className="sgg-mono mt-1 text-[11px] uppercase tracking-[0.18em] text-[#6b7280]">
+                          {selectedQuantity} peça(s) no modo {activePricingGroup.badge.toLowerCase()}
+                        </p>
+                      </div>
+                      <span className="sgg-mono rounded-full border border-[#1a2e1a] px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-[#6b7280]">
+                        {card.realMargin > 0 ? `${(card.realMargin * 100).toFixed(1)}% real` : '0%'}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 space-y-2 text-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[#6b7280]">Custo do pedido</span>
+                        <span className="sgg-mono text-[#f0fdf4]">{brl(card.totalOrderCost)}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[#6b7280]">Venda do pedido</span>
+                        <span className="sgg-mono text-[#f0fdf4]">{showPricingValues ? brl(card.totalOrderRevenue) : 'R$ ----'}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[#6b7280]">Lucro do pedido</span>
+                        <span className="sgg-mono text-[#f0fdf4]">{showPricingValues ? brl(card.totalOrderProfit) : 'R$ ----'}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 border-t border-[#1a2e1a] pt-2">
+                        <span className="text-[#6b7280]">Preço unitário sugerido</span>
+                        <span className="sgg-mono text-[#86efac]">{showPricingValues ? brl(card.salePrice) : 'R$ ----'}</span>
+                      </div>
+                    </div>
+                  </article>
+                ))}
               </div>
             </section>
 
@@ -1302,7 +1685,16 @@ export default function SelecaoGG() {
 
                 <div className="grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
                   {pricingProducts.map((product) => {
-                    const card = pricingCard(product, group, exchangeRate, selectedMargin, personalizationEnabled)
+                    const card = pricingCard(
+                      product,
+                      group,
+                      exchangeRate,
+                      selectedMargin,
+                      personalizationEnabled,
+                      selectedQuantity,
+                      extraCostPerUnit,
+                      roundingMode,
+                    )
 
                     return (
                       <article
@@ -1335,28 +1727,67 @@ export default function SelecaoGG() {
                             </span>
                           </div>
                           <div className="flex items-center justify-between gap-3 text-sm">
-                            <span className="text-[#6b7280]">Frete</span>
+                            <span className="text-[#6b7280]">Personalização +$3</span>
+                            <span className="sgg-mono text-right text-[#f0fdf4]">
+                              {personalizationEnabled ? `${usd(card.personalizationUsd)} → ${brl(card.personalizationBrl)}` : 'Desligada'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-3 text-sm">
+                            <span className="text-[#6b7280]">Envio</span>
                             <span className="sgg-mono text-right text-[#f0fdf4]">
                               {group.id === 'kit' ? 'Grátis' : `${usd(card.shippingUsd)} → ${brl(card.shippingBrl)}`}
                             </span>
                           </div>
                           <div className="flex items-center justify-between gap-3 text-sm">
-                            <span className="text-[#6b7280]">Taxa RF</span>
+                            <span className="text-[#6b7280]">Taxas</span>
                             <span className="sgg-mono text-right text-[#f0fdf4]">{group.taxLabel}</span>
                           </div>
+                          {card.extraCostPerUnit > 0 ? (
+                            <div className="flex items-center justify-between gap-3 text-sm">
+                              <span className="text-[#6b7280]">Custo extra</span>
+                              <span className="sgg-mono text-right text-[#f0fdf4]">{brl(card.extraCostPerUnit)}</span>
+                            </div>
+                          ) : null}
                           <div className="flex items-center justify-between gap-3 border-t border-[#1a2e1a] pt-3 text-sm">
-                            <span className="text-[#6b7280]">Custo total</span>
+                            <span className="text-[#6b7280]">Custo por peça</span>
                             <span className="sgg-mono text-right text-[#f0fdf4]">{brl(card.totalCost)}</span>
                           </div>
 
                           <div className="rounded-md border border-[#1a3a23] bg-[#0f1f14] px-4 py-4">
                             <div className="sgg-mono text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">Preço de venda</div>
-                            <div className="mt-2 text-3xl font-bold text-[#86efac]">{brl(card.salePrice)}</div>
+                            <div className="mt-2 text-3xl font-bold text-[#86efac]">
+                              {showPricingValues ? brl(card.salePrice) : 'R$ ----'}
+                            </div>
                           </div>
 
                           <div className="flex items-center justify-between gap-3 rounded-md border border-[#1a2e1a] bg-[#080c08] px-3 py-3 text-sm">
                             <span className="text-[#6b7280]">Lucro por peça</span>
-                            <span className="sgg-mono text-right text-[#f0fdf4]">{brl(card.profit)}</span>
+                            <span className="sgg-mono text-right text-[#f0fdf4]">
+                              {showPricingValues ? brl(card.profit) : 'R$ ----'}
+                            </span>
+                          </div>
+
+                          <div className="rounded-md border border-[#1a2e1a] bg-[#080c08] px-3 py-3">
+                            <div className="flex items-center justify-between gap-3 text-sm">
+                              <span className="text-[#6b7280]">Custo do pedido</span>
+                              <span className="sgg-mono text-right text-[#f0fdf4]">{brl(card.totalOrderCost)}</span>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between gap-3 text-sm">
+                              <span className="text-[#6b7280]">Venda do pedido</span>
+                              <span className="sgg-mono text-right text-[#f0fdf4]">
+                                {showPricingValues ? brl(card.totalOrderRevenue) : 'R$ ----'}
+                              </span>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between gap-3 text-sm">
+                              <span className="text-[#6b7280]">Lucro do pedido</span>
+                              <span className="sgg-mono text-right text-[#f0fdf4]">
+                                {showPricingValues ? brl(card.totalOrderProfit) : 'R$ ----'}
+                              </span>
+                            </div>
+                            <div className="mt-3 flex items-center justify-between gap-3 border-t border-[#1a2e1a] pt-2 text-sm">
+                              <span className="text-[#6b7280]">Margem real</span>
+                              <span className="sgg-mono text-right text-[#f0fdf4]">{(card.realMargin * 100).toFixed(1)}%</span>
+                            </div>
                           </div>
                         </div>
                       </article>
@@ -1377,7 +1808,7 @@ export default function SelecaoGG() {
                 </span>
               ) : (
                 <span className="sgg-mono text-[11px] uppercase tracking-[0.14em] text-zinc-500">
-                  frete avulso: {usd(4)} por peça | kit com 4+ peças: frete grátis e taxa RF diluída por unidade
+                  envio avulso: {usd(4)} por peça | kit com 4+ peças: grátis e taxas diluídas por unidade
                 </span>
               )}
             </footer>
