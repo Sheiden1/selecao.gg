@@ -17,7 +17,7 @@ export function HomeFaq() {
           <SectionHeading
             kicker="FAQ"
             title="Perguntas frequentes"
-            description="Respostas curtas para orientar o pedido."
+            
             className="items-start text-left"
           />
 

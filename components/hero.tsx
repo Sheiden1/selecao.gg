@@ -14,7 +14,7 @@ export function Hero() {
           <div className="max-w-[30rem] space-y-5">
             <div className="flex items-center gap-3">
               <div className="h-px w-8 bg-[var(--primary)]/55" />
-              <p className="site-kicker site-kicker-accent">Camisas selecionadas</p>
+              
             </div>
 
             <div className="space-y-3">

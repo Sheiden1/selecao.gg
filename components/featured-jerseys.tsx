@@ -73,7 +73,7 @@ export function FeaturedJerseys() {
         <SectionHeading
           kicker="Camisas em destaque"
           title="Modelos selecionados para facilitar a escolha."
-          description="Uma vitrine enxuta, com leitura clara e informação objetiva."
+          
           accent
         />
 

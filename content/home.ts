@@ -33,7 +33,7 @@ export const featuredJerseys = [
     category: "Seleção",
     edition: "Jogador e torcedor",
     description: "Versão Jogador e Torcedor | Nome e número personalizáveis",
-    price: "R$ ???",
+    price: "A partir de R$130,00",
     image: "/images/Jersey2026-player.png",
   },
   {
@@ -42,7 +42,7 @@ export const featuredJerseys = [
     category: "Seleção",
     edition: "Jogador e torcedor",
     description: "Versão Jogador e Torcedor | Nome e número personalizáveis",
-    price: "R$ ???",
+    price: "R$ A partir de R$130,00",
     image: "/images/banner1.png",
   },
   {
@@ -51,7 +51,7 @@ export const featuredJerseys = [
     category: "Retrô",
     edition: "Modelo histórico",
     description: "Peça escolhida pelo valor histórico e pela força visual.",
-    price: "R$ ???",
+    price: "R$ A partir de R$160,00",
     image: "/images/banner3.png",
   },
 ]
