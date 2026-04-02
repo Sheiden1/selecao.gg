@@ -33,6 +33,11 @@ const LOGIN_INPUT =
   'h-11 w-full rounded-md border border-[#1a2e1a] bg-[#0f1a0f] px-3 text-sm text-[#f0fdf4] outline-none placeholder:text-[#374151] focus:border-[#22c55e] focus:ring-2 focus:ring-[#22c55e]/30'
 const ADMIN_USERNAME = 'admin'
 const ADMIN_PASSWORD = 'selecao2026'
+const shirtVersions = ['Torcedor', 'Jogador']
+const shirtVersionLabelMap = {
+  torcedor: 'Torcedor',
+  jogador: 'Jogador',
+}
 
 const sizes = ['PP', 'P', 'M', 'G', 'GG', 'XGG']
 const payStatuses = ['Pendente', 'Pago']
@@ -124,22 +129,44 @@ function formatPriceInput(value) {
 
 function parseStoredNotes(value) {
   const source = typeof value === 'string' ? value : ''
-  const matches = [...source.matchAll(/\[\[charged_price:(\d+(?:\.\d{1,2})?)\]\]/gi)]
-  const chargedPrice = matches.length > 0 ? Number.parseFloat(matches[matches.length - 1][1]) : null
+  const chargedPriceMatches = [...source.matchAll(/\[\[charged_price:(\d+(?:\.\d{1,2})?)\]\]/gi)]
+  const chargedPrice = chargedPriceMatches.length > 0 ? Number.parseFloat(chargedPriceMatches[chargedPriceMatches.length - 1][1]) : null
+  const shirtVersionMatches = [...source.matchAll(/\[\[shirt_version:([a-z_]+)\]\]/gi)]
+  const rawShirtVersion = shirtVersionMatches.length > 0 ? shirtVersionMatches[shirtVersionMatches.length - 1][1] : ''
+  const shirtModelMatches = [...source.matchAll(/\[\[shirt_model:([^\]]+)\]\]/gi)]
+  const rawShirtModel = shirtModelMatches.length > 0 ? shirtModelMatches[shirtModelMatches.length - 1][1] : ''
+  let shirtModel = ''
+
+  if (rawShirtModel) {
+    try {
+      shirtModel = decodeURIComponent(rawShirtModel)
+    } catch {
+      shirtModel = rawShirtModel
+    }
+  }
+
+  const shirtVersion = shirtVersionLabelMap[String(rawShirtVersion).toLowerCase()] ?? 'Torcedor'
   const notes = source
     .replace(/\s*\[\[charged_price:\d+(?:\.\d{1,2})\]\]\s*/gi, '\n')
+    .replace(/\s*\[\[shirt_version:[a-z_]+\]\]\s*/gi, '\n')
+    .replace(/\s*\[\[shirt_model:[^\]]+\]\]\s*/gi, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 
   return {
     notes,
     chargedPrice,
+    shirtModel,
+    shirtVersion,
   }
 }
 
-function buildStoredNotes(notes, chargedPriceInput) {
+function buildStoredNotes(notes, chargedPriceInput, metadata = {}) {
   const visibleNotes = typeof notes === 'string' ? notes.trim() : ''
   const chargedPrice = parsePriceInput(chargedPriceInput)
+  const shirtModelInput = typeof metadata.shirtModel === 'string' ? metadata.shirtModel.trim() : ''
+  const shirtVersionInput = typeof metadata.shirtVersion === 'string' ? metadata.shirtVersion : 'Torcedor'
+  const shirtVersionKey = shirtVersionInput.toLowerCase() === 'jogador' ? 'jogador' : 'torcedor'
   const parts = []
 
   if (visibleNotes) {
@@ -149,6 +176,12 @@ function buildStoredNotes(notes, chargedPriceInput) {
   if (chargedPrice !== null) {
     parts.push(`[[charged_price:${chargedPrice.toFixed(2)}]]`)
   }
+
+  if (shirtModelInput) {
+    parts.push(`[[shirt_model:${encodeURIComponent(shirtModelInput)}]]`)
+  }
+
+  parts.push(`[[shirt_version:${shirtVersionKey}]]`)
 
   return parts.join('\n') || null
 }
@@ -220,7 +253,7 @@ function sortValue(order, key) {
     case 'client':
       return order.client.toLowerCase()
     case 'shirt':
-      return `${order.shirtName} ${order.shirtNumber}`.toLowerCase()
+      return `${order.shirtModel} ${order.shirtVersion} ${order.shirtName} ${order.shirtNumber}`.toLowerCase()
     case 'size':
       return sizes.indexOf(order.size)
     case 'payStatus':
@@ -237,6 +270,8 @@ function sortValue(order, key) {
 function createNextDraft() {
   return {
     client: '',
+    shirtModel: '',
+    shirtVersion: 'Torcedor',
     shirtName: '',
     shirtNumber: '',
     size: 'M',
@@ -259,12 +294,20 @@ function orderNumberLabel(id) {
 
 function normalizeOrder(order) {
   const createdAt = order.criado_em ?? new Date().toISOString()
-  const { notes, chargedPrice } = parseStoredNotes(order.observacoes)
+  const {
+    notes,
+    chargedPrice,
+    shirtModel: notesShirtModel,
+    shirtVersion: notesShirtVersion,
+  } = parseStoredNotes(order.observacoes)
+  const shirtVersionFromDb = shirtVersionLabelMap[String(order.versao ?? '').toLowerCase()] ?? null
 
   return {
     id: String(order.id ?? createdAt),
     number: orderNumberLabel(order.id ?? createdAt),
     client: order.cliente ?? '',
+    shirtModel: order.nome_camisa ?? order.modelo_camisa ?? notesShirtModel ?? '',
+    shirtVersion: shirtVersionFromDb ?? notesShirtVersion,
     shirtName: order.camisa ?? '',
     shirtNumber: order.numero ?? '',
     size: order.tamanho ?? 'M',
@@ -284,7 +327,10 @@ function buildPedidoPayload(order) {
     camisa: order.shirtName.trim().toUpperCase(),
     numero: order.shirtNumber.trim(),
     tamanho: order.size,
-    observacoes: buildStoredNotes(order.notes, order.chargedPriceInput),
+    observacoes: buildStoredNotes(order.notes, order.chargedPriceInput, {
+      shirtModel: order.shirtModel,
+      shirtVersion: order.shirtVersion,
+    }),
     pagamento: paymentValueMap[order.payStatus] ?? 'pendente',
     status: orderStatusValueMap[order.orderStatus] ?? 'aguardando',
     criado_em: order.date ? `${order.date}T00:00:00` : undefined,
@@ -689,7 +735,9 @@ export default function SelecaoGG() {
     const searchMatch =
       !query ||
       order.client.toLowerCase().includes(query) ||
-      order.number.toLowerCase().includes(query)
+      order.number.toLowerCase().includes(query) ||
+      order.shirtModel.toLowerCase().includes(query) ||
+      order.shirtVersion.toLowerCase().includes(query)
     const payMatch = payFilter === 'Todos' || order.payStatus === payFilter
     const statusMatch = statusFilter === 'Todos' || order.orderStatus === statusFilter
     return searchMatch && payMatch && statusMatch
@@ -826,7 +874,10 @@ export default function SelecaoGG() {
       await requestJson(`/api/pedidos/${selectedOrder.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
-          observacoes: buildStoredNotes(detailDraft.notes, detailDraft.chargedPriceInput),
+          observacoes: buildStoredNotes(detailDraft.notes, detailDraft.chargedPriceInput, {
+            shirtModel: selectedOrder.shirtModel,
+            shirtVersion: selectedOrder.shirtVersion,
+          }),
           pagamento: paymentValueMap[detailDraft.payStatus],
           status: orderStatusValueMap[detailDraft.orderStatus],
         }),
@@ -881,8 +932,8 @@ export default function SelecaoGG() {
   }
 
   async function createOrder() {
-    if (!newOrder.client.trim() || !newOrder.shirtName.trim() || !newOrder.shirtNumber.trim()) {
-      notify('ERROR', 'Preencha cliente, nome e número da camisa')
+    if (!newOrder.client.trim() || !newOrder.shirtModel.trim() || !newOrder.shirtName.trim() || !newOrder.shirtNumber.trim()) {
+      notify('ERROR', 'Preencha cliente, nome da camisa, nome e numero na camisa')
       return
     }
 
@@ -958,10 +1009,12 @@ export default function SelecaoGG() {
   }
 
   function exportCsv() {
-    const headers = ['Pedido', 'Cliente', 'Camisa', 'Numero', 'Tamanho', 'Pagamento', 'Status', 'Data', 'Cobrado', 'Notas']
+    const headers = ['Pedido', 'Cliente', 'Nome da camisa', 'Versao', 'Nome na camisa', 'Numero', 'Tamanho', 'Pagamento', 'Status', 'Data', 'Cobrado', 'Notas']
     const rows = visibleOrders.map((order) => [
       order.number,
       order.client,
+      order.shirtModel,
+      order.shirtVersion,
       order.shirtName,
       order.shirtNumber,
       order.size,
@@ -1059,7 +1112,7 @@ export default function SelecaoGG() {
           ) : (
           <>
           <header className="fixed inset-x-0 top-0 z-40 h-14 border-b border-[#1a2e1a] bg-[#080c08]/90 backdrop-blur-sm">
-            <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6">
+            <div className="mx-auto flex h-full max-w-[1700px] items-center justify-between px-4 sm:px-6">
               <div className="flex items-baseline gap-2">
                 <h1 className="sgg-heading text-xl font-bold uppercase tracking-[0.14em] text-[#f0fdf4]">
                   SELECAO.GG
@@ -1102,7 +1155,7 @@ export default function SelecaoGG() {
             </div>
           </header>
 
-          <div className="sgg-fade-in mx-auto max-w-7xl px-4 pb-6 pt-[72px] sm:px-6">
+          <div className="sgg-fade-in mx-auto max-w-[1700px] px-4 pb-6 pt-[72px] sm:px-6">
             <section className="mb-4 flex flex-wrap items-center gap-2">
               {[
                 ['pedidos', 'Pedidos', ClipboardList],
@@ -1150,7 +1203,7 @@ export default function SelecaoGG() {
               ))}
             </section>
 
-            <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
               <div className={`${SURFACE} overflow-hidden`}>
                 <div className="flex items-center justify-between border-b border-[#1a2e1a] px-4 py-3">
                   <h2 className="sgg-heading text-lg uppercase tracking-[0.12em]">Pedidos</h2>
@@ -1273,7 +1326,7 @@ export default function SelecaoGG() {
                           </td>
                         </tr>
                       ) : visibleOrders.map((order) => (
-                        <tr key={order.id} className="h-11 border-t border-[#1a2e1a] transition hover:bg-[#1a2e1a]/50">
+                        <tr key={order.id} className="border-t border-[#1a2e1a] transition hover:bg-[#1a2e1a]/50">
                           <td className="sgg-mono px-3 py-2">
                             <button onClick={() => openDetails(order)} className="text-green-400 transition hover:text-green-300">
                               {order.number}
@@ -1281,8 +1334,12 @@ export default function SelecaoGG() {
                           </td>
                           <td className="px-3 py-2">{order.client}</td>
                           <td className="px-3 py-2">
-                            <span>{order.shirtName}</span>
-                            <span className="sgg-mono text-[#6b7280]"> / {order.shirtNumber}</span>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[#f0fdf4]">{order.shirtModel || '--'}</span>
+                              <span className="sgg-mono text-[#6b7280]">
+                                {order.shirtVersion} - {order.shirtName} / {order.shirtNumber}
+                              </span>
+                            </div>
                           </td>
                           <td className="px-3 py-2">
                             <div className="flex justify-center">
@@ -1366,6 +1423,8 @@ export default function SelecaoGG() {
 
                 <div className="grid gap-3 p-4">
                   <input ref={firstFieldRef} className={TEXT_INPUT} placeholder="Cliente" value={newOrder.client} onChange={(e) => setNewOrder((c) => ({ ...c, client: e.target.value }))} />
+                  <input className={TEXT_INPUT} placeholder="Nome da camisa (ex: Real Madrid 24/25)" value={newOrder.shirtModel} onChange={(e) => setNewOrder((c) => ({ ...c, shirtModel: e.target.value }))} />
+                  <TerminalSelect value={newOrder.shirtVersion} onValueChange={(value) => setNewOrder((c) => ({ ...c, shirtVersion: value }))} options={shirtVersions} />
                   <input className={TEXT_INPUT} placeholder="Nome na camisa" value={newOrder.shirtName} onChange={(e) => setNewOrder((c) => ({ ...c, shirtName: e.target.value }))} />
                   <input className={TEXT_INPUT} placeholder="Numero na camisa" value={newOrder.shirtNumber} onChange={(e) => setNewOrder((c) => ({ ...c, shirtNumber: e.target.value }))} />
                   <input className={TEXT_INPUT} type="date" value={newOrder.date} onChange={(e) => setNewOrder((c) => ({ ...c, date: e.target.value }))} />
@@ -1848,6 +1907,8 @@ export default function SelecaoGG() {
                           <div className="grid gap-3 md:grid-cols-3">
                             {[
                               ['CLIENT', selectedOrder.client],
+                              ['SHIRT', selectedOrder.shirtModel || '--'],
+                              ['VERSION', selectedOrder.shirtVersion],
                               ['NAME', selectedOrder.shirtName],
                               ['NUMBER', selectedOrder.shirtNumber],
                               ['SIZE', selectedOrder.size],
@@ -1959,4 +2020,3 @@ export default function SelecaoGG() {
     </Tooltip.Provider>
   )
 }
-
