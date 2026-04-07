@@ -42,7 +42,7 @@ export const featuredJerseys = [
     category: "Seleção",
     edition: "Jogador e torcedor",
     description: "Versão Jogador e Torcedor | Nome e número personalizáveis",
-    price: "R$ A partir de R$130,00",
+    price: "A partir de R$130,00",
     image: "/images/banner1.png",
   },
   {
