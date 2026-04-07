@@ -24,7 +24,7 @@ export function Footer() {
                   </a>
                 ))}
                 <a
-                  href={whatsappHref}
+                  href={instagramHref}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="site-link-muted inline-flex items-center gap-2 text-[13px]"
@@ -36,7 +36,7 @@ export function Footer() {
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center md:justify-end">
                 <SiteCta
-                  href={instagramHref}
+                  href={whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
                   variant="secondary"

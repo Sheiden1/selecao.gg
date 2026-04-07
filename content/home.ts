@@ -1,4 +1,4 @@
-export const instagramHref = "https://instagram.com/selecao.gg"
+export const instagramHref = "https://www.instagram.com/selecao.gg"
 export const whatsappHref =
   "https://wa.me/5583991345424?text=Ol%C3%A1!%20Vi%20as%20camisas%20no%20site%20e%20tenho%20interesse."
 
